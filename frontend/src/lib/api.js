@@ -1,6 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${String(import.meta.env.VITE_API_URL).replace(/\/$/, "")}/api`
-  : "/api";
+const PRODUCTION_API = "https://indabax-reg.onrender.com/api";
+
+const API_BASE = import.meta.env.DEV ? "/api" : PRODUCTION_API;
 
 function getToken() {
   return localStorage.getItem("indabax_token") || "";

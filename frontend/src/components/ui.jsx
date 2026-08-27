@@ -21,7 +21,7 @@ export function BackLink({ to = "/", label = "Back" }) {
 
 export function Page({ children, right, width = "max-w-lg" }) {
   return (
-    <div className="page-shell w-full bg-cream">
+    <div className="page-shell w-full">
       <header className="site-header min-w-0">
         <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link
