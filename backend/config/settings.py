@@ -18,6 +18,9 @@ ALLOWED_HOSTS = [
     for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
 ]
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -34,6 +37,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -96,16 +100,45 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT.mkdir(exist_ok=True)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get(
-        "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173",
-    ).split(",")
-    if origin.strip()
+FRONTEND_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://indabaxkab.vercel.app",
 ]
+CORS_ALLOWED_ORIGINS = list(
+    dict.fromkeys(
+        FRONTEND_ORIGINS
+        + [
+            origin.strip()
+            for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+            if origin.strip()
+        ]
+    )
+)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://indabaxkab[\w.-]*\.vercel\.app$",
+]
+
+CSRF_TRUSTED_ORIGINS = list(
+    dict.fromkeys(
+        FRONTEND_ORIGINS
+        + [
+            origin.strip()
+            for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+            if origin.strip()
+        ]
+        + (
+            [f"https://{RENDER_EXTERNAL_HOSTNAME}"]
+            if RENDER_EXTERNAL_HOSTNAME
+            else []
+        )
+    )
+)
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

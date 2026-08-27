@@ -1,6 +1,7 @@
 import csv
 
 from django.contrib.auth import authenticate
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from rest_framework import status
@@ -18,6 +19,8 @@ from .constants import (
 )
 from .models import Registrant
 from .serializers import RegistrantCreateSerializer, RegistrantListSerializer
+
+PAGE_SIZE = 25
 
 
 def _choice_list(choices):
@@ -90,8 +93,19 @@ class RegistrantListView(APIView):
             )
         if faculty:
             registrants = registrants.filter(faculty=faculty)
-        serializer = RegistrantListSerializer(registrants, many=True)
-        return Response(serializer.data)
+
+        paginator = Paginator(registrants, PAGE_SIZE)
+        page_obj = paginator.get_page(request.query_params.get("page", 1))
+        serializer = RegistrantListSerializer(page_obj.object_list, many=True)
+        return Response(
+            {
+                "count": paginator.count,
+                "page": page_obj.number,
+                "page_size": PAGE_SIZE,
+                "total_pages": paginator.num_pages,
+                "results": serializer.data,
+            }
+        )
 
 
 class StatsView(APIView):

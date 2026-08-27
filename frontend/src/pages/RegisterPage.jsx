@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchChoices, firstError, registerStudent } from "../lib/api";
-import { Field, Page, inputClass, primaryBtn } from "../components/ui";
+import { Field, Page, ChoiceSelect, primaryBtn, inputClass } from "../components/ui";
 
 const EMPTY = {
   full_name: "",
@@ -23,7 +23,6 @@ export default function RegisterPage() {
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
-  const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -44,10 +43,16 @@ export default function RegisterPage() {
     setFormError("");
     setErrors({});
     try {
+      const nextErrors = {};
+      if (!form.year_of_study) nextErrors.year_of_study = "Select your year.";
+      if (!form.faculty) nextErrors.faculty = "Choose your faculty.";
       const email = form.email.trim().toLowerCase();
       if (!email.endsWith("@kab.ac.ug")) {
-        setErrors({ email: "Use your Kabale University email (@kab.ac.ug)." });
-        setFormError("Use your Kabale University email (@kab.ac.ug).");
+        nextErrors.email = "Use your Kabale University email (@kab.ac.ug).";
+      }
+      if (Object.keys(nextErrors).length) {
+        setErrors(nextErrors);
+        setFormError(Object.values(nextErrors)[0]);
         return;
       }
       const result = await registerStudent({ ...form, email });
@@ -73,33 +78,20 @@ export default function RegisterPage() {
       right={
         <Link
           to="/organizer"
-          className="shrink-0 rounded-full bg-indaba px-3 py-1.5 text-[10px] font-bold tracking-wide text-white uppercase no-underline hover:bg-indaba-dark sm:px-3.5 sm:text-[11px]"
+          className="shrink-0 rounded-full bg-indaba px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white no-underline shadow-[0_6px_14px_rgba(15,122,74,0.28)] hover:bg-indaba-dark sm:px-3.5"
         >
           Organizer
         </Link>
       }
     >
-      <h1 className="font-display text-2xl leading-tight text-indaba-dark sm:text-4xl">
-        Register
-      </h1>
-      <p className="mt-1 text-sm text-ink-muted sm:text-base">
-        IndabaX Kabale — one minute.
+      <h1 className="page-title">Register</h1>
+      <p className="page-kicker mt-1.5">IndabaX Kabale University</p>
+      <p className={`alert-slot mt-2 text-sm font-medium ${formError ? "text-terracotta" : "invisible"}`}>
+        {formError || "\u00a0"}
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="form-card mt-4 rounded-xl border border-cream-dark border-t-4 border-t-gold bg-white p-4 sm:mt-5 sm:rounded-2xl sm:p-6"
-      >
-        {formError ? (
-          <div
-            className="mb-4 rounded-lg bg-terracotta/10 px-3 py-2.5 text-sm text-terracotta"
-            role="alert"
-          >
-            {formError}
-          </div>
-        ) : null}
-
-        <div className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-xl p-4 sm:rounded-2xl sm:p-6">
+        <div className="flex flex-col">
           <Field id="full_name" label="Full name" error={errors.full_name}>
             <input
               id="full_name"
@@ -112,7 +104,7 @@ export default function RegisterPage() {
             />
           </Field>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
             <Field
               id="student_number"
               label="Student number"
@@ -128,38 +120,26 @@ export default function RegisterPage() {
               />
             </Field>
             <Field id="year_of_study" label="Year" error={errors.year_of_study}>
-              <select
+              <ChoiceSelect
                 id="year_of_study"
-                className={inputClass}
                 value={form.year_of_study}
-                onChange={(e) => update("year_of_study", e.target.value)}
+                onChange={(value) => update("year_of_study", value)}
+                options={choices?.years || []}
+                placeholder="Select"
                 required
-              >
-                <option value="">Select</option>
-                {(choices?.years || []).map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
+              />
             </Field>
           </div>
 
           <Field id="faculty" label="Faculty" error={errors.faculty}>
-            <select
+            <ChoiceSelect
               id="faculty"
-              className={inputClass}
               value={form.faculty}
-              onChange={(e) => update("faculty", e.target.value)}
+              onChange={(value) => update("faculty", value)}
+              options={choices?.faculties || []}
+              placeholder="Choose"
               required
-            >
-              <option value="">Choose</option>
-              {(choices?.faculties || []).map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+            />
           </Field>
 
           <Field id="program" label="Program" error={errors.program}>
@@ -173,7 +153,7 @@ export default function RegisterPage() {
             />
           </Field>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
             <Field id="phone" label="Phone" error={errors.phone}>
               <input
                 id="phone"
@@ -203,75 +183,50 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="mt-4 text-left text-sm font-semibold text-indaba underline-offset-2 hover:underline"
-          onClick={() => setShowMore((open) => !open)}
-        >
-          {showMore ? "Hide extras" : "Optional extras"}
-        </button>
-
-        {showMore ? (
-          <div className="mt-3 flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field id="gender" label="Gender" error={errors.gender}>
-                <select
-                  id="gender"
-                  className={inputClass}
-                  value={form.gender}
-                  onChange={(e) => update("gender", e.target.value)}
-                >
-                  <option value="">Skip</option>
-                  {(choices?.genders || []).map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field
-                id="experience_level"
-                label="ML / AI level"
-                error={errors.experience_level}
-              >
-                <select
-                  id="experience_level"
-                  className={inputClass}
-                  value={form.experience_level}
-                  onChange={(e) => update("experience_level", e.target.value)}
-                >
-                  <option value="">Skip</option>
-                  {(choices?.experience || []).map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-            </div>
+        <div className="mt-1 border-t border-cream-dark pt-4">
+          <p className="mb-3 text-[11px] font-semibold tracking-[0.14em] text-ink-muted uppercase">
+            Optional
+          </p>
+          <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+            <Field id="gender" label="Gender" error={errors.gender}>
+              <ChoiceSelect
+                id="gender"
+                value={form.gender}
+                onChange={(value) => update("gender", value)}
+                options={choices?.genders || []}
+                placeholder="Skip"
+              />
+            </Field>
             <Field
-              id="heard_from"
-              label="How did you hear?"
-              error={errors.heard_from}
+              id="experience_level"
+              label="ML / AI level"
+              error={errors.experience_level}
             >
-              <select
-                id="heard_from"
-                className={inputClass}
-                value={form.heard_from}
-                onChange={(e) => update("heard_from", e.target.value)}
-              >
-                <option value="">Skip</option>
-                {(choices?.heard_from || []).map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
+              <ChoiceSelect
+                id="experience_level"
+                value={form.experience_level}
+                onChange={(value) => update("experience_level", value)}
+                options={choices?.experience || []}
+                placeholder="Skip"
+              />
             </Field>
           </div>
-        ) : null}
+          <Field
+            id="heard_from"
+            label="How did you hear?"
+            error={errors.heard_from}
+          >
+            <ChoiceSelect
+              id="heard_from"
+              value={form.heard_from}
+              onChange={(value) => update("heard_from", value)}
+              options={choices?.heard_from || []}
+              placeholder="Skip"
+            />
+          </Field>
+        </div>
 
-        <label className="mt-4 flex items-start gap-3 text-sm text-ink">
+        <label className="mt-1 flex min-h-11 items-start gap-3 text-sm text-ink">
           <input
             type="checkbox"
             className="mt-1 h-4 w-4 shrink-0 accent-indaba"
@@ -281,17 +236,13 @@ export default function RegisterPage() {
           />
           <span>I agree to the IndabaX code of conduct.</span>
         </label>
-        {errors.code_of_conduct_agreed ? (
-          <p className="mt-1 text-xs font-medium text-terracotta">
-            {errors.code_of_conduct_agreed}
-          </p>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className={`${primaryBtn} mt-5`}
+        <p
+          className={`field-hint ${errors.code_of_conduct_agreed ? "text-terracotta" : "invisible"}`}
         >
+          {errors.code_of_conduct_agreed || "\u00a0"}
+        </p>
+
+        <button type="submit" disabled={submitting} className={primaryBtn}>
           {submitting ? "Saving…" : "Register"}
         </button>
       </form>

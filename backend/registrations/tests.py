@@ -43,7 +43,10 @@ class RegistrationApiTests(TestCase):
 
         listed = self.client.get("/api/registrants/")
         self.assertEqual(listed.status_code, 200)
-        self.assertEqual(len(listed.data), 1)
+        self.assertEqual(listed.data["count"], 1)
+        self.assertEqual(len(listed.data["results"]), 1)
+        self.assertEqual(listed.data["page"], 1)
+        self.assertEqual(listed.data["page_size"], 25)
 
         stats = self.client.get("/api/registrants/stats/")
         self.assertEqual(stats.data["total"], 1)
@@ -51,6 +54,30 @@ class RegistrationApiTests(TestCase):
         export = self.client.get("/api/registrants/export/")
         self.assertEqual(export.status_code, 200)
         self.assertIn("INDABA-KAB-0001", export.content.decode())
+
+    def test_registrant_list_paginates(self):
+        for index in range(26):
+            self.client.post(
+                "/api/register/",
+                {
+                    **self.payload,
+                    "full_name": f"Student {index}",
+                    "student_number": f"2023/A/{index:04d}",
+                    "email": f"student{index}@kab.ac.ug",
+                },
+                format="json",
+            )
+        user = User.objects.create_user("organizer", "x@y.com", "test-pass-123")
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        page_one = self.client.get("/api/registrants/?page=1")
+        self.assertEqual(page_one.data["count"], 26)
+        self.assertEqual(page_one.data["total_pages"], 2)
+        self.assertEqual(len(page_one.data["results"]), 25)
+
+        page_two = self.client.get("/api/registrants/?page=2")
+        self.assertEqual(len(page_two.data["results"]), 1)
 
     def test_rejects_non_kab_email(self):
         payload = {**self.payload, "email": "aisha@gmail.com", "student_number": "2023/A/9999"}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { firstError, loginOrganizer, setToken } from "../lib/api";
-import { Field, Page, inputClass, primaryBtn } from "../components/ui";
+import { BackLink, Field, Page, inputClass, primaryBtn } from "../components/ui";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -27,21 +27,15 @@ export default function LoginPage() {
 
   return (
     <Page>
-      <h1 className="font-display text-[1.75rem] text-indaba-dark sm:text-4xl">
-        Organizer
-      </h1>
-      <p className="mt-1 text-sm text-ink-muted sm:text-base">Sign in to the list.</p>
+      <BackLink to="/" label="Back to register" />
+      <h1 className="page-title">Organizer</h1>
+      <p className="mt-1 text-sm text-ink-muted">Sign in to the list.</p>
+      <p className={`alert-slot mt-2 text-sm font-medium ${error ? "text-terracotta" : "invisible"}`}>
+        {error || "\u00a0"}
+      </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-4 rounded-xl border border-cream-dark border-t-4 border-t-gold bg-white p-3 sm:mt-5 sm:rounded-2xl sm:p-6"
-      >
-        {error ? (
-          <div className="mb-4 rounded-xl bg-terracotta/10 px-3 py-2.5 text-sm text-terracotta">
-            {error}
-          </div>
-        ) : null}
-        <div className="space-y-3">
+      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-xl p-4 sm:rounded-2xl sm:p-6">
+        <div>
           <Field id="username" label="Username">
             <input
               id="username"
@@ -64,7 +58,7 @@ export default function LoginPage() {
             />
           </Field>
         </div>
-        <button type="submit" disabled={submitting} className={`${primaryBtn} mt-5`}>
+        <button type="submit" disabled={submitting} className={primaryBtn}>
           {submitting ? "Signing in…" : "Sign in"}
         </button>
       </form>

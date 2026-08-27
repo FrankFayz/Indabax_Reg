@@ -1,4 +1,6 @@
-const API_BASE = "/api";
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${String(import.meta.env.VITE_API_URL).replace(/\/$/, "")}/api`
+  : "/api";
 
 function getToken() {
   return localStorage.getItem("indabax_token") || "";
@@ -62,12 +64,12 @@ export function loginOrganizer(username, password) {
   });
 }
 
-export function fetchRegistrants(search = "", faculty = "") {
+export function fetchRegistrants(search = "", faculty = "", page = 1) {
   const params = new URLSearchParams();
   if (search) params.set("q", search);
   if (faculty) params.set("faculty", faculty);
-  const query = params.toString();
-  return request(`/registrants/${query ? `?${query}` : ""}`, { auth: true });
+  params.set("page", String(page));
+  return request(`/registrants/?${params.toString()}`, { auth: true });
 }
 
 export function fetchStats() {
