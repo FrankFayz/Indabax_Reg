@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   closeEvent,
   createEvent,
@@ -7,7 +7,7 @@ import {
   firstError,
   openEvent,
 } from "../lib/api";
-import { inputClass } from "./ui";
+import { inputClass, primaryBtn, secondaryBtn } from "./ui";
 
 export function formatEventDate(iso) {
   if (!iso) return "";
@@ -23,10 +23,7 @@ export function formatEventDate(iso) {
   }
 }
 
-const actionBtn =
-  "h-9 rounded-lg border border-cream-dark bg-white px-3 text-xs font-semibold text-indaba-dark shadow-sm hover:border-gold hover:bg-gold-soft/40 disabled:opacity-40";
-
-function bucketOf(item) {
+export function bucketOf(item) {
   if (item.status === "active" || item.status === "upcoming" || item.status === "past") {
     return item.status;
   }
@@ -46,127 +43,25 @@ function byDateDesc(a, b) {
   return byDateAsc(b, a);
 }
 
-function EventCard({
-  item,
-  selected,
-  busy,
-  exporting,
-  canEnable,
-  onSelect,
-  onEnable,
-  onDisable,
-  onExport,
-  onRemove,
-}) {
+function StatusMark({ item }) {
   const past = bucketOf(item) === "past";
-
+  const label = item.registration_open ? "Live" : past ? "Done" : "Soon";
   return (
-    <article
-      className={`w-full rounded-2xl border p-4 text-left transition ${
-        selected
-          ? "border-gold bg-gold-soft/30 ring-2 ring-gold/40"
-          : "border-cream-dark bg-cream/40 hover:border-gold"
+    <span
+      className={`shrink-0 text-[10px] font-semibold tracking-wide uppercase ${
+        item.registration_open ? "text-indaba" : "text-ink-muted"
       }`}
     >
-      <button type="button" onClick={() => onSelect(String(item.id))} className="w-full text-left">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-semibold text-ink">{item.name}</p>
-            <p className="mt-0.5 text-sm text-ink-muted">{formatEventDate(item.event_date)}</p>
-          </div>
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase ${
-              item.registration_open
-                ? "bg-indaba text-white"
-                : past
-                  ? "bg-white text-ink-muted ring-1 ring-cream-dark"
-                  : "bg-white text-indaba-dark ring-1 ring-cream-dark"
-            }`}
-          >
-            {item.registration_open ? "Live" : past ? "Done" : "Upcoming"}
-          </span>
-        </div>
-        <p className="mt-3 text-sm font-semibold text-indaba-dark">
-          {item.attendance_count} registered
-        </p>
-      </button>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {item.registration_open ? (
-          <button
-            type="button"
-            className={actionBtn}
-            disabled={busy}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDisable();
-            }}
-          >
-            Disable registration
-          </button>
-        ) : canEnable && !past ? (
-          <button
-            type="button"
-            className={actionBtn}
-            disabled={busy}
-            onClick={(e) => {
-              e.stopPropagation();
-              onEnable();
-            }}
-          >
-            Enable registration
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className={actionBtn}
-          disabled={exporting}
-          onClick={(e) => {
-            e.stopPropagation();
-            onExport(e);
-          }}
-        >
-          {exporting ? "Exporting…" : "Export event CSV"}
-        </button>
-        {item.attendance_count === 0 ? (
-          <button
-            type="button"
-            className={`${actionBtn} text-terracotta`}
-            disabled={busy}
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-          >
-            Remove
-          </button>
-        ) : null}
-      </div>
-    </article>
+      {label}
+    </span>
   );
 }
 
-function EventGroup({ title, hint, items, renderCard }) {
-  if (!items.length) return null;
-  return (
-    <div className="mt-5">
-      <div className="mb-2">
-        <h3 className="text-xs font-bold tracking-[0.14em] text-ink-muted uppercase">
-          {title}
-        </h3>
-        {hint ? <p className="mt-0.5 text-sm text-ink-muted">{hint}</p> : null}
-      </div>
-      <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {items.map((item) => (
-          <li key={item.id}>{renderCard(item)}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export function EventBoard({
+export function EventMenu({
   events,
   selectedId,
+  view,
+  onView,
   onSelect,
   onRefresh,
   onError,
@@ -174,13 +69,45 @@ export function EventBoard({
   const [name, setName] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [saving, setSaving] = useState(false);
-  const [busyId, setBusyId] = useState(null);
-  const [exportingId, setExportingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
-  const active = events.filter((item) => bucketOf(item) === "active");
-  const upcoming = events.filter((item) => bucketOf(item) === "upcoming").sort(byDateAsc);
-  const past = events.filter((item) => bucketOf(item) === "past").sort(byDateDesc);
-  const hasLive = active.length > 0;
+  async function handleDelete(item) {
+    const ok = window.confirm(
+      `Delete “${item.name}” and all attendance for this session? This cannot be undone.`
+    );
+    if (!ok) return;
+    setDeletingId(item.id);
+    onError("");
+    try {
+      await deleteEvent(item.id);
+      if (String(selectedId) === String(item.id)) onSelect("");
+      await onRefresh();
+    } catch (err) {
+      onError(firstError(err.data) || "Could not delete the event.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  const grouped = useMemo(
+    () => ({
+      active: events.filter((item) => bucketOf(item) === "active"),
+      upcoming: events
+        .filter((item) => bucketOf(item) === "upcoming")
+        .sort(byDateAsc),
+      past: events.filter((item) => bucketOf(item) === "past").sort(byDateDesc),
+    }),
+    [events]
+  );
+
+  const tabs = [
+    { id: "all", label: "All attendants" },
+    { id: "active", label: "Live", count: grouped.active.length },
+    { id: "upcoming", label: "Upcoming", count: grouped.upcoming.length },
+    { id: "past", label: "Past", count: grouped.past.length },
+  ];
+
+  const list = view === "all" ? [] : grouped[view] || [];
 
   async function handleCreate(event) {
     event.preventDefault();
@@ -195,6 +122,7 @@ export function EventBoard({
       setName("");
       setEventDate("");
       await onRefresh();
+      onView("upcoming");
       onSelect(String(created.id));
     } catch (err) {
       onError(firstError(err.data) || "Could not add the event.");
@@ -203,85 +131,87 @@ export function EventBoard({
     }
   }
 
-  async function run(eventId, action) {
-    setBusyId(eventId);
-    onError("");
-    try {
-      await action();
-      await onRefresh();
-    } catch (err) {
-      onError(firstError(err.data) || "Could not update the event.");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function handleExport(item, clickEvent) {
-    clickEvent.stopPropagation();
-    setExportingId(item.id);
-    onError("");
-    try {
-      await downloadEventExport(item);
-    } catch {
-      onError("Could not export this event CSV.");
-    } finally {
-      setExportingId(null);
-    }
-  }
-
-  function renderCard(item) {
-    return (
-      <EventCard
-        item={item}
-        selected={String(item.id) === String(selectedId)}
-        busy={busyId === item.id}
-        exporting={exportingId === item.id}
-        canEnable={bucketOf(item) === "upcoming" && !hasLive}
-        onSelect={onSelect}
-        onEnable={() => run(item.id, () => openEvent(item.id))}
-        onDisable={() => run(item.id, () => closeEvent(item.id))}
-        onExport={(event) => handleExport(item, event)}
-        onRemove={() =>
-          run(item.id, async () => {
-            await deleteEvent(item.id);
-            if (String(selectedId) === String(item.id)) onSelect("");
-          })
-        }
-      />
-    );
-  }
-
   return (
-    <section className="mt-4 rounded-2xl border border-cream-dark bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-bold text-ink">Events</h2>
-          <p className="mt-0.5 text-sm text-ink-muted">
-            Only one session can be live. Add upcoming dates, then enable when people should sign in.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => onSelect("")}
-          className={`h-9 rounded-lg px-3 text-xs font-semibold ${
-            selectedId
-              ? "border border-cream-dark bg-white text-indaba-dark hover:border-gold"
-              : "bg-indaba text-white"
-          }`}
-        >
-          All attendants
-        </button>
-      </div>
+    <section className="rounded-md border border-cream-dark bg-white">
+      <nav className="flex flex-wrap border-b border-cream-dark" aria-label="Events">
+        {tabs.map((tab) => {
+          const current = view === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                onView(tab.id);
+                if (tab.id === "all") onSelect("");
+              }}
+              className={`h-11 px-4 text-sm font-semibold ${
+                current
+                  ? "border-b-2 border-indaba text-indaba-dark"
+                  : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              {tab.label}
+              {tab.count != null ? (
+                <span className="ml-1.5 font-medium text-ink-muted">{tab.count}</span>
+              ) : null}
+            </button>
+          );
+        })}
+      </nav>
+
+      {view === "all" ? (
+        <p className="px-4 py-3 text-sm text-ink-muted">
+          Master list: one row per Kabale email.
+        </p>
+      ) : list.length === 0 ? (
+        <p className="px-4 py-6 text-center text-sm text-ink-muted">
+          No {view === "active" ? "live" : view} sessions yet.
+        </p>
+      ) : (
+        <ul className="divide-y divide-cream-dark">
+          {list.map((item) => {
+            const selected = String(item.id) === String(selectedId);
+            return (
+              <li
+                key={item.id}
+                className={`flex items-stretch ${selected ? "bg-cream" : "hover:bg-cream/60"}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onSelect(String(item.id))}
+                  className="min-w-0 flex-1 px-4 py-3 text-left"
+                >
+                  <span className="block truncate font-semibold text-ink">{item.name}</span>
+                  <span className="mt-0.5 block text-sm text-ink-muted">
+                    {formatEventDate(item.event_date)} · {item.attendance_count} registered
+                  </span>
+                </button>
+                <div className="flex shrink-0 items-center gap-2 pr-3">
+                  <StatusMark item={item} />
+                  <button
+                    type="button"
+                    className={`${secondaryBtn} h-9 px-3 text-xs text-terracotta`}
+                    disabled={deletingId === item.id}
+                    onClick={() => handleDelete(item)}
+                  >
+                    {deletingId === item.id ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <form
         onSubmit={handleCreate}
-        className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_11rem_auto]"
+        className="grid grid-cols-1 gap-2 border-t border-cream-dark p-3 md:grid-cols-[minmax(0,1fr)_11rem_auto]"
       >
         <input
           className={inputClass}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Event name, e.g. Weekly session"
+          placeholder="New event name"
           aria-label="Event name"
           required
         />
@@ -293,45 +223,99 @@ export function EventBoard({
           aria-label="Event date"
           required
         />
-        <button
-          type="submit"
-          disabled={saving}
-          className="h-11 rounded-xl bg-indaba px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(15,122,74,0.25)] hover:bg-indaba-dark disabled:opacity-60"
-        >
+        <button type="submit" disabled={saving} className={`${primaryBtn} w-auto px-4`}>
           {saving ? "Adding…" : "Add event"}
         </button>
       </form>
-
-      {events.length === 0 ? (
-        <p className="mt-4 rounded-xl bg-cream px-4 py-6 text-center text-sm text-ink-muted">
-          No events yet. Add the first session to start taking attendance.
-        </p>
-      ) : (
-        <>
-          <EventGroup
-            title="Active"
-            hint="This is the only session taking registrations now."
-            items={active}
-            renderCard={renderCard}
-          />
-          <EventGroup
-            title="Upcoming"
-            hint={
-              hasLive
-                ? "Disable the live session before opening another."
-                : "Enable one of these when the session is ready."
-            }
-            items={upcoming}
-            renderCard={renderCard}
-          />
-          <EventGroup
-            title="Past"
-            hint="Finished sessions. Export the CSV for that day here."
-            items={past}
-            renderCard={renderCard}
-          />
-        </>
-      )}
     </section>
+  );
+}
+
+export function EventToolbar({
+  event,
+  hasLive,
+  onRefresh,
+  onError,
+  onSelect,
+}) {
+  const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  if (!event) return null;
+
+  const past = bucketOf(event) === "past";
+  const canEnable = !hasLive && !past && !event.registration_open;
+
+  async function run(action) {
+    setBusy(true);
+    onError("");
+    try {
+      await action();
+      await onRefresh();
+    } catch (err) {
+      onError(firstError(err.data) || "Could not update the event.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleEventExport() {
+    setExporting(true);
+    onError("");
+    try {
+      await downloadEventExport(event);
+    } catch {
+      onError("Could not export this event CSV.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      {event.registration_open ? (
+        <button
+          type="button"
+          className={secondaryBtn}
+          disabled={busy}
+          onClick={() => run(() => closeEvent(event.id))}
+        >
+          Close registration
+        </button>
+      ) : canEnable ? (
+        <button
+          type="button"
+          className={`${primaryBtn} w-auto px-4`}
+          disabled={busy}
+          onClick={() => run(() => openEvent(event.id))}
+        >
+          Open registration
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className={secondaryBtn}
+        disabled={exporting}
+        onClick={handleEventExport}
+      >
+        {exporting ? "Exporting…" : "Export event CSV"}
+      </button>
+      <button
+        type="button"
+        className={`${secondaryBtn} text-terracotta`}
+        disabled={busy}
+        onClick={() => {
+          const ok = window.confirm(
+            `Delete “${event.name}” and all attendance for this session? This cannot be undone.`
+          );
+          if (!ok) return;
+          run(async () => {
+            await deleteEvent(event.id);
+            onSelect("");
+          });
+        }}
+      >
+        Delete event
+      </button>
+    </div>
   );
 }

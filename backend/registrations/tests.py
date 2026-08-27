@@ -80,6 +80,21 @@ class RegistrationApiTests(APITestCase):
         self.assertEqual(person.full_name, "Aisha N.")
         self.assertEqual(person.phone, "0772000000")
 
+    def test_same_student_number_can_register_for_next_event(self):
+        self.client.post("/api/register/", self.payload, format="json")
+        self.event.close_registration()
+        next_event = Event.objects.create(name="Workshop", event_date="2026-09-11")
+        next_event.open_registration()
+        again = self.client.post("/api/register/", self.payload, format="json")
+        self.assertEqual(again.status_code, 201)
+        self.assertEqual(Registrant.objects.count(), 1)
+        self.assertEqual(Attendance.objects.count(), 2)
+        self.assertTrue(
+            Attendance.objects.filter(
+                attendant__student_number="2023/A/1234", event=next_event
+            ).exists()
+        )
+
     def test_student_number_cannot_belong_to_two_emails(self):
         self.client.post("/api/register/", self.payload, format="json")
         other = {
@@ -89,7 +104,7 @@ class RegistrationApiTests(APITestCase):
         }
         response = self.client.post("/api/register/", other, format="json")
         self.assertEqual(response.status_code, 400)
-        self.assertIn("student_number", response.data)
+        self.assertIn("already registered", str(response.data).lower())
 
     def test_choices_include_open_event(self):
         response = self.client.get("/api/choices/")
@@ -202,7 +217,7 @@ class RegistrationApiTests(APITestCase):
         self.assertFalse(leftover.registration_open)
         self.assertEqual(leftover.bucket(), "past")
 
-    def test_create_event_and_delete_empty(self):
+    def test_create_event_and_delete_with_attendance(self):
         self._auth()
         created = self.client.post(
             "/api/events/",
@@ -215,8 +230,41 @@ class RegistrationApiTests(APITestCase):
         self.assertEqual(deleted.status_code, 204)
 
         self.client.post("/api/register/", self.payload, format="json")
-        blocked = self.client.delete(f"/api/events/{self.event.id}/")
-        self.assertEqual(blocked.status_code, 400)
+        second = Event.objects.create(name="Workshop", event_date="2026-09-11")
+        second.open_registration()
+        self.client.post(
+            "/api/register/",
+            {
+                **self.payload,
+                "full_name": "John Doe",
+                "student_number": "2023/A/5555",
+                "email": "john@kab.ac.ug",
+            },
+            format="json",
+        )
+        self.client.post("/api/register/", self.payload, format="json")
+
+        wiped = self.client.delete(f"/api/events/{self.event.id}/")
+        self.assertEqual(wiped.status_code, 204)
+        self.assertFalse(Event.objects.filter(pk=self.event.id).exists())
+        self.assertEqual(Attendance.objects.filter(event=second).count(), 2)
+        self.assertTrue(Registrant.objects.filter(email="aisha@kab.ac.ug").exists())
+        self.assertTrue(Registrant.objects.filter(email="john@kab.ac.ug").exists())
+
+        only_john_event = Event.objects.create(name="Solo", event_date="2026-09-18")
+        only_john_event.open_registration()
+        self.client.post(
+            "/api/register/",
+            {
+                **self.payload,
+                "full_name": "Mary Okello",
+                "student_number": "2023/A/7777",
+                "email": "mary@kab.ac.ug",
+            },
+            format="json",
+        )
+        self.client.delete(f"/api/events/{only_john_event.id}/")
+        self.assertFalse(Registrant.objects.filter(email="mary@kab.ac.ug").exists())
 
     def test_registrant_list_paginates(self):
         for index in range(26):

@@ -5,7 +5,7 @@ export function BackLink({ to = "/", label = "Back" }) {
   return (
     <Link
       to={to}
-      className="mb-4 inline-flex h-9 items-center gap-1.5 rounded-full border border-cream-dark bg-white px-3 text-sm font-semibold text-indaba-dark no-underline shadow-sm transition hover:border-gold hover:bg-gold-soft/40"
+      className="mb-5 inline-flex h-9 items-center gap-1.5 text-sm font-medium text-ink-muted no-underline transition-colors hover:text-ink"
     >
       <svg
         viewBox="0 0 20 20"
@@ -51,7 +51,7 @@ export function Page({ children, right, width = "max-w-lg" }) {
         </div>
       </main>
 
-      <footer className="min-w-0 border-t border-gold/50 bg-white">
+      <footer className="min-w-0 border-t border-cream-dark bg-white">
         <div className="mx-auto grid w-full max-w-lg grid-cols-2 items-start gap-3 px-4 py-4 sm:max-w-3xl sm:gap-8 sm:px-6">
           <a
             href="https://www.kab.ac.ug/"
@@ -112,10 +112,16 @@ export function Field({ id, label, error, children }) {
 }
 
 export const inputClass =
-  "field-control h-11 rounded-xl border border-cream-dark bg-white px-3 text-base text-ink outline-none shadow-sm transition-[border-color,box-shadow] placeholder:text-stone-400 focus:border-indaba focus:ring-4 focus:ring-indaba/15";
+  "field-control h-11 rounded-md border border-cream-dark bg-white px-3 text-base text-ink outline-none transition-colors placeholder:text-stone-400 focus:border-indaba-dark";
 
 export const primaryBtn =
-  "inline-flex h-11 w-full items-center justify-center rounded-xl bg-indaba text-base font-semibold text-white shadow-[0_10px_22px_rgba(15,122,74,0.28)] transition-[background-color,transform,box-shadow] hover:bg-indaba-dark hover:shadow-[0_12px_26px_rgba(10,86,52,0.32)] active:translate-y-px disabled:opacity-60";
+  "inline-flex h-11 w-full items-center justify-center rounded-md bg-indaba text-base font-semibold text-white transition-colors hover:bg-indaba-dark disabled:opacity-60";
+
+export const secondaryBtn =
+  "inline-flex h-11 items-center justify-center rounded-md border border-cream-dark bg-white px-4 text-sm font-semibold text-ink transition-colors hover:bg-cream disabled:opacity-40";
+
+export const headerBtn =
+  "shrink-0 rounded-md border border-cream-dark bg-white px-3 py-1.5 text-[11px] font-semibold tracking-wide text-ink no-underline transition-colors hover:bg-cream sm:px-3.5";
 
 export function ChoiceSelect({
   id,
@@ -156,7 +162,7 @@ export function ChoiceSelect({
       <button
         type="button"
         id={id}
-        className="field-control flex min-h-11 w-full items-start justify-between gap-3 rounded-xl border border-cream-dark bg-white py-2.5 pl-3 pr-3 text-left text-base shadow-sm outline-none transition-[border-color,box-shadow] focus:border-indaba focus:ring-4 focus:ring-indaba/15"
+        className="field-control flex min-h-11 w-full items-start justify-between gap-3 rounded-md border border-cream-dark bg-white py-2.5 pl-3 pr-3 text-left text-base outline-none transition-colors focus:border-indaba-dark"
         aria-label={ariaLabel}
         aria-required={required || undefined}
         aria-haspopup="listbox"
@@ -186,7 +192,7 @@ export function ChoiceSelect({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-x-hidden overflow-y-auto rounded-xl border border-cream-dark bg-white py-1 shadow-xl"
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-x-hidden overflow-y-auto rounded-md border border-cream-dark bg-white py-1"
         >
           <li>
             <button

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchChoices, firstError, registerStudent } from "../lib/api";
-import { Field, Page, ChoiceSelect, primaryBtn, inputClass } from "../components/ui";
+import { Field, Page, ChoiceSelect, primaryBtn, inputClass, headerBtn } from "../components/ui";
 
 const EMPTY = {
   full_name: "",
@@ -78,7 +78,7 @@ export default function RegisterPage() {
       right={
         <Link
           to="/organizer"
-          className="shrink-0 rounded-full bg-indaba px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white no-underline shadow-[0_6px_14px_rgba(15,122,74,0.28)] hover:bg-indaba-dark sm:px-3.5"
+          className={headerBtn}
         >
           Organizer
         </Link>
@@ -87,7 +87,7 @@ export default function RegisterPage() {
       <h1 className="page-title">Register</h1>
       <p className="page-kicker mt-1.5">IndabaX Kabale University</p>
       {choices?.open_event ? (
-        <p className="mt-1 text-sm font-semibold text-indaba-dark">
+        <p className="mt-2 text-sm text-ink">
           {choices.open_event.name}
           {choices.open_event.event_date
             ? ` · ${new Date(`${choices.open_event.event_date}T00:00:00`).toLocaleDateString("en-UG", {
@@ -103,14 +103,14 @@ export default function RegisterPage() {
       </p>
 
       {choices && !choices.open_event ? (
-        <div className="form-card mt-3 rounded-xl p-6 text-center sm:rounded-2xl sm:p-8">
-          <p className="font-display text-2xl text-indaba-dark">Registration is closed</p>
+        <div className="form-card mt-3 rounded-md p-6 text-center sm:p-8">
+          <p className="font-display text-2xl text-ink">Registration is closed</p>
           <p className="mt-2 text-sm text-ink-muted">
             The organizer has not opened a session yet. Check back for the next IndabaX event.
           </p>
         </div>
       ) : (
-      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-xl p-4 sm:rounded-2xl sm:p-6">
+      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-md p-4 sm:p-6">
         <div className="flex flex-col">
           <Field id="full_name" label="Full name" error={errors.full_name}>
             <input

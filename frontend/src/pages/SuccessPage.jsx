@@ -14,23 +14,21 @@ export default function SuccessPage() {
   return (
     <Page>
       <BackLink to="/" label="Back to register" />
-      <div className="text-center">
+      <div className="form-card rounded-md px-6 py-10 text-center sm:px-10">
         <h1 className="page-title">You’re in.</h1>
-        <p className="mt-1 text-sm text-ink-muted">{result.full_name}</p>
+        <p className="mt-2 text-sm text-ink-muted">{result.full_name}</p>
         {result.event_name ? (
-          <p className="mt-1 text-sm font-semibold text-indaba-dark">
-            Registered for {result.event_name}
-          </p>
+          <p className="mt-1 text-sm text-ink">Registered for {result.event_name}</p>
         ) : null}
-        <p className="mt-3 text-sm text-ink">
-          Tap below to join the IndabaX WhatsApp group.
+        <p className="mt-5 text-sm text-ink-muted">
+          Join the IndabaX WhatsApp group to stay updated.
         </p>
 
         <a
           href={WHATSAPP_GROUP}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6 inline-flex h-11 w-full max-w-sm items-center justify-center gap-2 rounded-lg bg-[#128C4E] px-4 text-base font-semibold text-white no-underline transition-[background-color] hover:bg-[#0f7a43]"
+          className="mt-6 inline-flex h-11 w-full max-w-sm items-center justify-center gap-2 rounded-md bg-[#128C4E] px-4 text-base font-semibold text-white no-underline transition-colors hover:bg-[#0f7a43]"
         >
           <svg
             viewBox="0 0 24 24"
@@ -44,7 +42,7 @@ export default function SuccessPage() {
 
         <Link
           to="/"
-          className="mt-4 inline-block text-sm font-semibold text-indaba no-underline hover:underline"
+          className="mt-5 inline-block text-sm font-medium text-ink-muted no-underline hover:text-ink"
         >
           Register another
         </Link>

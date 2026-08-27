@@ -29,12 +29,12 @@ export default function LoginPage() {
     <Page>
       <BackLink to="/" label="Back to register" />
       <h1 className="page-title">Organizer</h1>
-      <p className="mt-1 text-sm text-ink-muted">Sign in to the list.</p>
+      <p className="mt-1 text-sm text-ink-muted">Sign in to view attendance.</p>
       <p className={`alert-slot mt-2 text-sm font-medium ${error ? "text-terracotta" : "invisible"}`}>
         {error || "\u00a0"}
       </p>
 
-      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-xl p-4 sm:rounded-2xl sm:p-6">
+      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-md p-4 sm:p-6">
         <div>
           <Field id="username" label="Username">
             <input

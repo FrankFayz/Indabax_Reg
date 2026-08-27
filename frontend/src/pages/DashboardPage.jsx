@@ -9,8 +9,8 @@ import {
   isLoggedIn,
   setToken,
 } from "../lib/api";
-import { Page, inputClass, BackLink, ChoiceSelect } from "../components/ui";
-import { EventBoard, formatEventDate } from "../components/EventBoard";
+import { Page, inputClass, BackLink, ChoiceSelect, headerBtn, secondaryBtn } from "../components/ui";
+import { EventMenu, EventToolbar, bucketOf, formatEventDate } from "../components/EventBoard";
 import { PieCard } from "../components/PieCard";
 
 const PAGE_SIZE = 25;
@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedEventId = searchParams.get("event") || "";
+  const view = searchParams.get("view") || "all";
   const [stats, setStats] = useState(null);
   const [rows, setRows] = useState([]);
   const [count, setCount] = useState(0);
@@ -46,6 +47,7 @@ export default function DashboardPage() {
   const selectedEvent = events.find(
     (item) => String(item.id) === String(selectedEventId)
   );
+  const hasLive = events.some((item) => bucketOf(item) === "active");
 
   const loadEvents = useCallback(async () => {
     const data = await fetchEvents();
@@ -102,12 +104,30 @@ export default function DashboardPage() {
     navigate("/");
   }
 
-  function selectEvent(nextId) {
-    const params = new URLSearchParams(searchParams);
-    if (nextId) params.set("event", nextId);
-    else params.delete("event");
+  function setParams({ eventId = selectedEventId, nextView = view }) {
+    const params = new URLSearchParams();
+    if (nextView && nextView !== "all") params.set("view", nextView);
+    if (eventId) params.set("event", eventId);
     setSearchParams(params);
     setPage(1);
+  }
+
+  function selectEvent(nextId) {
+    const picked = events.find((item) => String(item.id) === String(nextId));
+    const nextView = picked ? bucketOf(picked) : "all";
+    setParams({ eventId: nextId, nextView: nextId ? nextView : view === "all" ? "all" : view });
+  }
+
+  function selectView(nextView) {
+    if (nextView === "all") {
+      setParams({ eventId: "", nextView: "all" });
+      return;
+    }
+    const stillFits = selectedEvent && bucketOf(selectedEvent) === nextView;
+    setParams({
+      eventId: stillFits ? selectedEventId : "",
+      nextView,
+    });
   }
 
   async function handleExport() {
@@ -125,11 +145,7 @@ export default function DashboardPage() {
     <Page
       width="max-w-6xl"
       right={
-        <button
-          type="button"
-          onClick={logout}
-          className="rounded-full bg-indaba px-3.5 py-1.5 text-[11px] font-semibold tracking-wide text-white shadow-[0_6px_14px_rgba(15,122,74,0.28)] hover:bg-indaba-dark"
-        >
+        <button type="button" onClick={logout} className={headerBtn}>
           Sign out
         </button>
       }
@@ -144,34 +160,54 @@ export default function DashboardPage() {
               : "All attendants, one row per Kabale email."}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting}
-          className="h-11 rounded-xl bg-indaba px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(15,122,74,0.25)] hover:bg-indaba-dark disabled:opacity-60"
-        >
-          {exporting ? "Exporting…" : "Export CSV"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className={secondaryBtn}
+          >
+            {exporting ? "Exporting…" : "Export CSV"}
+          </button>
+        </div>
       </div>
 
-      <p className={`alert-slot mt-3 text-sm font-medium ${error ? "text-terracotta" : "invisible"}`}>
-        {error || "\u00a0"}
-      </p>
+      {error ? (
+        <p className="mt-3 text-sm font-medium text-terracotta">{error}</p>
+      ) : (
+        <p className="alert-slot mt-3 text-sm font-medium invisible">&nbsp;</p>
+      )}
 
-      <EventBoard
-        events={events}
-        selectedId={selectedEventId}
-        onSelect={selectEvent}
-        onRefresh={loadEvents}
-        onError={setError}
-      />
+      <div className="mt-1">
+        <EventMenu
+          events={events}
+          selectedId={selectedEventId}
+          view={view}
+          onView={selectView}
+          onSelect={selectEvent}
+          onRefresh={loadEvents}
+          onError={setError}
+        />
+      </div>
 
-      <section className="mt-4">
-        <article className="flex items-end justify-between rounded-2xl bg-indaba px-4 py-4 text-white shadow-[0_14px_28px_rgba(15,122,74,0.28)]">
-          <p className="text-sm font-semibold text-gold-soft">
+      {selectedEvent ? (
+        <div className="mt-3">
+          <EventToolbar
+            event={selectedEvent}
+            hasLive={hasLive}
+            onRefresh={loadEvents}
+            onError={setError}
+            onSelect={(id) => setParams({ eventId: id, nextView: view })}
+          />
+        </div>
+      ) : null}
+
+      <section className="mt-5">
+        <article className="flex items-end justify-between rounded-md border border-cream-dark bg-white px-4 py-4">
+          <p className="text-sm text-ink-muted">
             {selectedEvent ? "This event" : "Attendants"}
           </p>
-          <p className="font-display min-h-10 text-4xl leading-none tabular-nums">
+          <p className="font-display text-4xl leading-none tabular-nums text-ink">
             {stats?.total ?? "—"}
           </p>
         </article>
@@ -182,7 +218,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(12rem,22rem)]">
+      <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(12rem,22rem)]">
         <input
           className={inputClass}
           value={search}
@@ -208,14 +244,14 @@ export default function DashboardPage() {
 
       <div className="mt-4 space-y-3 md:hidden">
         {rows.length === 0 ? (
-          <p className="rounded-2xl bg-surface px-4 py-8 text-center text-ink-muted ring-1 ring-cream-dark">
+          <p className="rounded-md bg-white px-4 py-8 text-center text-ink-muted ring-1 ring-cream-dark">
             No matches.
           </p>
         ) : (
           rows.map((person) => (
             <article
               key={person.id}
-              className="rounded-2xl border border-cream-dark border-t-[3px] border-t-gold bg-surface p-4"
+              className="rounded-md border border-cream-dark bg-surface p-4"
             >
               <p className="font-bold text-indaba">{person.registration_code}</p>
               <p className="mt-1 font-semibold">{person.full_name}</p>
@@ -232,7 +268,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="mt-4 hidden overflow-x-auto rounded-2xl border border-cream-dark bg-surface md:block">
+      <div className="mt-4 hidden overflow-x-auto rounded-md border border-cream-dark bg-surface md:block">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-cream text-xs tracking-wide text-ink-muted uppercase">
             <tr>
@@ -290,7 +326,7 @@ export default function DashboardPage() {
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
-            className="h-11 rounded-xl border border-cream-dark bg-white px-4 text-sm font-semibold text-indaba-dark shadow-sm hover:border-gold hover:bg-gold-soft/40 disabled:opacity-40"
+            className={secondaryBtn}
           >
             Previous
           </button>
@@ -301,7 +337,7 @@ export default function DashboardPage() {
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((current) => current + 1)}
-            className="h-11 rounded-xl border border-cream-dark bg-white px-4 text-sm font-semibold text-indaba-dark shadow-sm hover:border-gold hover:bg-gold-soft/40 disabled:opacity-40"
+            className={secondaryBtn}
           >
             Next
           </button>

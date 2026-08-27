@@ -1,25 +1,33 @@
 const SLICE_COLORS = [
-  "#0f7a4a",
-  "#e8b423",
-  "#0a5634",
-  "#17a05f",
-  "#c48912",
-  "#dc4336",
-  "#3d6b4f",
-  "#8b6914",
-  "#5c8a6a",
+  "#0F7A4A",
+  "#D4A017",
+  "#1D4E89",
+  "#C2410C",
+  "#0F766E",
+  "#6D28D9",
+  "#BE123C",
+  "#334155",
+  "#4D7C0F",
 ];
 
 function conicGradient(items, total) {
+  const gap = items.length > 1 ? 0.7 : 0;
+  const usable = 100 - gap * items.length;
   let start = 0;
-  const stops = items.map((item, index) => {
-    const share = (item.count / total) * 100;
+  const stops = [];
+
+  items.forEach((item, index) => {
+    const share = (item.count / total) * usable;
     const end = start + share;
     const color = SLICE_COLORS[index % SLICE_COLORS.length];
-    const stop = `${color} ${start}% ${end}%`;
+    stops.push(`${color} ${start}% ${end}%`);
     start = end;
-    return stop;
+    if (gap) {
+      stops.push(`#ffffff ${start}% ${start + gap}%`);
+      start += gap;
+    }
   });
+
   return `conic-gradient(${stops.join(", ")})`;
 }
 
@@ -27,27 +35,24 @@ export function PieCard({ title, items = [] }) {
   const total = items.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <article className="min-h-64 rounded-2xl border border-cream-dark bg-white p-4 shadow-sm">
-      <h2 className="text-sm font-bold text-ink">{title}</h2>
+    <article className="rounded-md border border-cream-dark bg-white p-4">
+      <h2 className="text-sm font-semibold text-ink">{title}</h2>
       {total === 0 ? (
-        <p className="mt-8 text-center text-sm text-ink-muted">None yet.</p>
+        <p className="mt-6 text-sm text-ink-muted">None yet.</p>
       ) : (
-        <div className="mt-4 flex flex-col items-center gap-4">
+        <div className="mt-4 flex items-start gap-4">
           <div
-            className="relative h-36 w-36 shrink-0 rounded-full"
+            className="relative h-24 w-24 shrink-0 rounded-full"
             style={{ background: conicGradient(items, total) }}
             aria-hidden="true"
           >
-            <div className="absolute inset-[27%] flex flex-col items-center justify-center rounded-full bg-white">
-              <p className="font-display text-2xl leading-none text-indaba-dark tabular-nums">
+            <div className="absolute inset-[26%] flex items-center justify-center rounded-full bg-white">
+              <p className="font-display text-lg leading-none text-ink tabular-nums">
                 {total}
-              </p>
-              <p className="mt-0.5 text-[10px] font-semibold tracking-wide text-ink-muted uppercase">
-                Total
               </p>
             </div>
           </div>
-          <ul className="w-full min-w-0 space-y-1.5">
+          <ul className="min-w-0 flex-1 space-y-1">
             {items.map((item, index) => {
               const percent = Math.round((item.count / total) * 100);
               return (
@@ -57,7 +62,7 @@ export function PieCard({ title, items = [] }) {
                 >
                   <span className="flex min-w-0 items-start gap-2">
                     <span
-                      className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                      className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-[2px]"
                       style={{
                         background: SLICE_COLORS[index % SLICE_COLORS.length],
                       }}

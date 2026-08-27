@@ -104,18 +104,20 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
 
         email = validated_data["email"]
         student_number = validated_data["student_number"]
-        attendant = Registrant.objects.filter(email=email).first()
-        returning = attendant is not None
+        by_email = Registrant.objects.filter(email=email).first()
+        by_number = Registrant.objects.filter(
+            student_number__iexact=student_number
+        ).first()
 
-        taken = Registrant.objects.filter(student_number__iexact=student_number)
-        if attendant:
-            taken = taken.exclude(pk=attendant.pk)
-        if taken.exists():
+        if by_email and by_number and by_email.pk != by_number.pk:
             raise serializers.ValidationError(
                 {
                     "student_number": "This student number is already used by another attendant."
                 }
             )
+
+        attendant = by_email or by_number
+        returning = attendant is not None
 
         if attendant is None:
             attendant = Registrant.objects.create(**validated_data)
@@ -123,6 +125,15 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
             if Attendance.objects.filter(attendant=attendant, event=event).exists():
                 raise serializers.ValidationError(
                     {"detail": f"You are already registered for {event.name}."}
+                )
+            if (
+                validated_data["email"] != attendant.email
+                and Registrant.objects.filter(email=validated_data["email"])
+                .exclude(pk=attendant.pk)
+                .exists()
+            ):
+                raise serializers.ValidationError(
+                    {"email": "This email is already used by another attendant."}
                 )
             for field, value in validated_data.items():
                 setattr(attendant, field, value)

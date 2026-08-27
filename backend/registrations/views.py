@@ -249,14 +249,7 @@ class EventDetailView(APIView):
 
     def delete(self, request, pk):
         event = self._get(pk)
-        if event.attendance_count:
-            return Response(
-                {
-                    "detail": "This event already has attendance. Close it instead of deleting."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        event.delete()
+        event.delete_with_records()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

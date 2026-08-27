@@ -74,6 +74,16 @@ class Event(models.Model):
             self.registration_open = False
             self.save(update_fields=["registration_open"])
 
+    def delete_with_records(self):
+        with transaction.atomic():
+            attendant_ids = list(
+                self.attendances.values_list("attendant_id", flat=True)
+            )
+            self.delete()
+            Registrant.objects.filter(
+                pk__in=attendant_ids, attendances__isnull=True
+            ).delete()
+
 
 class Registrant(models.Model):
     full_name = models.CharField(max_length=150)
