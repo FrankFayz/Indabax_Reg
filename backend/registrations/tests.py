@@ -1,12 +1,11 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
 from rest_framework.authtoken.models import Token
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 
-from .models import Registrant
+from .models import Attendance, Event, Registrant
 
 
-class RegistrationApiTests(TestCase):
+class RegistrationApiTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.payload = {
@@ -22,24 +21,87 @@ class RegistrationApiTests(TestCase):
             "heard_from": "friend",
             "code_of_conduct_agreed": True,
         }
+        self.event = Event.objects.create(
+            name="Weekly session",
+            event_date="2026-09-04",
+            registration_open=True,
+        )
+
+    def _auth(self):
+        user = User.objects.create_user("organizer", "x@y.com", "test-pass-123")
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        return user
 
     def test_register_creates_code(self):
         response = self.client.post("/api/register/", self.payload, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["registration_code"], "INDABA-KAB-0001")
+        self.assertEqual(response.data["event_name"], "Weekly session")
         self.assertEqual(Registrant.objects.count(), 1)
+        self.assertEqual(Attendance.objects.count(), 1)
 
-    def test_duplicate_student_number(self):
+    def test_closed_registration_is_rejected(self):
+        self.event.close_registration()
+        response = self.client.post("/api/register/", self.payload, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("closed", str(response.data).lower())
+        self.assertEqual(Registrant.objects.count(), 0)
+
+    def test_same_event_same_email_is_rejected(self):
         self.client.post("/api/register/", self.payload, format="json")
         again = self.client.post("/api/register/", self.payload, format="json")
         self.assertEqual(again.status_code, 400)
-        self.assertIn("already registered", again.data["student_number"][0])
+        self.assertIn("already registered", str(again.data).lower())
+        self.assertEqual(Registrant.objects.count(), 1)
+        self.assertEqual(Attendance.objects.count(), 1)
 
-    def test_organizer_list_and_export(self):
+    def test_same_email_can_register_for_next_event(self):
         self.client.post("/api/register/", self.payload, format="json")
-        user = User.objects.create_user("organizer", "x@y.com", "test-pass-123")
-        token = Token.objects.create(user=user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        self.event.close_registration()
+        next_event = Event.objects.create(
+            name="Workshop",
+            event_date="2026-09-11",
+        )
+        next_event.open_registration()
+        self.event.refresh_from_db()
+        self.assertFalse(self.event.registration_open)
+
+        again = self.client.post(
+            "/api/register/",
+            {**self.payload, "full_name": "Aisha N.", "phone": "0772000000"},
+            format="json",
+        )
+        self.assertEqual(again.status_code, 201)
+        self.assertTrue(again.data["returning"])
+        self.assertEqual(Registrant.objects.count(), 1)
+        self.assertEqual(Attendance.objects.count(), 2)
+        person = Registrant.objects.get(email="aisha@kab.ac.ug")
+        self.assertEqual(person.full_name, "Aisha N.")
+        self.assertEqual(person.phone, "0772000000")
+
+    def test_student_number_cannot_belong_to_two_emails(self):
+        self.client.post("/api/register/", self.payload, format="json")
+        other = {
+            **self.payload,
+            "full_name": "John Doe",
+            "email": "john@kab.ac.ug",
+        }
+        response = self.client.post("/api/register/", other, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("student_number", response.data)
+
+    def test_choices_include_open_event(self):
+        response = self.client.get("/api/choices/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["open_event"]["name"], "Weekly session")
+        self.event.close_registration()
+        closed = self.client.get("/api/choices/")
+        self.assertIsNone(closed.data["open_event"])
+
+    def test_organizer_list_and_master_export(self):
+        self.client.post("/api/register/", self.payload, format="json")
+        self._auth()
 
         listed = self.client.get("/api/registrants/")
         self.assertEqual(listed.status_code, 200)
@@ -50,10 +112,84 @@ class RegistrationApiTests(TestCase):
 
         stats = self.client.get("/api/registrants/stats/")
         self.assertEqual(stats.data["total"], 1)
+        self.assertEqual(stats.data["by_program"][0]["label"], "BSc Computer Science")
+        self.assertEqual(stats.data["by_year"][0]["key"], "year_2")
+        self.assertEqual(stats.data["by_faculty"][0]["key"], "computing")
 
         export = self.client.get("/api/registrants/export/")
         self.assertEqual(export.status_code, 200)
-        self.assertIn("INDABA-KAB-0001", export.content.decode())
+        body = export.content.decode()
+        self.assertIn("aisha@kab.ac.ug", body)
+        self.assertIn("Weekly session 04-Sep-2026", body)
+        self.assertIn("attended", body)
+
+    def test_event_export_and_master_pivot(self):
+        self.client.post("/api/register/", self.payload, format="json")
+        self.event.close_registration()
+        workshop = Event.objects.create(name="Workshop", event_date="2026-09-11")
+        workshop.open_registration()
+        self.client.post(
+            "/api/register/",
+            {
+                **self.payload,
+                "full_name": "John Doe",
+                "student_number": "2023/A/5555",
+                "email": "john@kab.ac.ug",
+            },
+            format="json",
+        )
+        self._auth()
+
+        week = self.client.get(f"/api/events/{self.event.id}/export/")
+        week_body = week.content.decode()
+        self.assertIn("aisha@kab.ac.ug", week_body)
+        self.assertNotIn("john@kab.ac.ug", week_body)
+
+        master = self.client.get("/api/registrants/export/").content.decode()
+        aisha_row = [
+            line for line in master.splitlines() if "aisha@kab.ac.ug" in line
+        ][0]
+        john_row = [line for line in master.splitlines() if "john@kab.ac.ug" in line][0]
+        self.assertIn("Weekly session 04-Sep-2026", master)
+        self.assertIn("Workshop 11-Sep-2026", master)
+        self.assertEqual(aisha_row.count("attended"), 1)
+        self.assertEqual(john_row.count("attended"), 1)
+
+        scoped = self.client.get(f"/api/registrants/?event={self.event.id}")
+        self.assertEqual(scoped.data["count"], 1)
+        self.assertEqual(scoped.data["results"][0]["email"], "aisha@kab.ac.ug")
+
+        event_stats = self.client.get(
+            f"/api/registrants/stats/?event={workshop.id}"
+        )
+        self.assertEqual(event_stats.data["total"], 1)
+
+    def test_opening_an_event_closes_the_other(self):
+        self._auth()
+        other = Event.objects.create(name="Hack night", event_date="2026-09-18")
+        opened = self.client.post(f"/api/events/{other.id}/open/")
+        self.assertEqual(opened.status_code, 200)
+        self.assertTrue(opened.data["registration_open"])
+        self.event.refresh_from_db()
+        other.refresh_from_db()
+        self.assertFalse(self.event.registration_open)
+        self.assertTrue(other.registration_open)
+
+    def test_create_event_and_delete_empty(self):
+        self._auth()
+        created = self.client.post(
+            "/api/events/",
+            {"name": "Office hours", "event_date": "2026-09-25"},
+            format="json",
+        )
+        self.assertEqual(created.status_code, 201)
+        pk = created.data["id"]
+        deleted = self.client.delete(f"/api/events/{pk}/")
+        self.assertEqual(deleted.status_code, 204)
+
+        self.client.post("/api/register/", self.payload, format="json")
+        blocked = self.client.delete(f"/api/events/{self.event.id}/")
+        self.assertEqual(blocked.status_code, 400)
 
     def test_registrant_list_paginates(self):
         for index in range(26):
@@ -67,9 +203,7 @@ class RegistrationApiTests(TestCase):
                 },
                 format="json",
             )
-        user = User.objects.create_user("organizer", "x@y.com", "test-pass-123")
-        token = Token.objects.create(user=user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        self._auth()
 
         page_one = self.client.get("/api/registrants/?page=1")
         self.assertEqual(page_one.data["count"], 26)
@@ -80,7 +214,11 @@ class RegistrationApiTests(TestCase):
         self.assertEqual(len(page_two.data["results"]), 1)
 
     def test_rejects_non_kab_email(self):
-        payload = {**self.payload, "email": "aisha@gmail.com", "student_number": "2023/A/9999"}
+        payload = {
+            **self.payload,
+            "email": "aisha@gmail.com",
+            "student_number": "2023/A/9999",
+        }
         response = self.client.post("/api/register/", payload, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertIn("kab.ac.ug", response.data["email"][0].lower())

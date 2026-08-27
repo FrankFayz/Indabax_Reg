@@ -64,21 +64,45 @@ export function loginOrganizer(username, password) {
   });
 }
 
-export function fetchRegistrants(search = "", faculty = "", page = 1) {
+export function fetchEvents() {
+  return request("/events/", { auth: true });
+}
+
+export function createEvent(payload) {
+  return request("/events/", { method: "POST", body: payload, auth: true });
+}
+
+export function openEvent(eventId) {
+  return request(`/events/${eventId}/open/`, { method: "POST", auth: true });
+}
+
+export function closeEvent(eventId) {
+  return request(`/events/${eventId}/close/`, { method: "POST", auth: true });
+}
+
+export function deleteEvent(eventId) {
+  return request(`/events/${eventId}/`, { method: "DELETE", auth: true });
+}
+
+export function fetchRegistrants(search = "", faculty = "", page = 1, eventId = "") {
   const params = new URLSearchParams();
   if (search) params.set("q", search);
   if (faculty) params.set("faculty", faculty);
+  if (eventId) params.set("event", String(eventId));
   params.set("page", String(page));
   return request(`/registrants/?${params.toString()}`, { auth: true });
 }
 
-export function fetchStats() {
-  return request("/registrants/stats/", { auth: true });
+export function fetchStats(eventId = "") {
+  const params = new URLSearchParams();
+  if (eventId) params.set("event", String(eventId));
+  const query = params.toString();
+  return request(`/registrants/stats/${query ? `?${query}` : ""}`, { auth: true });
 }
 
-export async function downloadExport() {
+async function downloadCsv(path, filename) {
   const token = getToken();
-  const response = await fetch(`${API_BASE}/registrants/export/`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     headers: { Authorization: `Token ${token}` },
   });
   if (!response.ok) {
@@ -88,17 +112,37 @@ export async function downloadExport() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "indabax-kabale-registrants.csv";
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
 }
 
+export function downloadExport() {
+  return downloadCsv("/registrants/export/", "indabax-kabale-attendance.csv");
+}
+
+export function downloadEventExport(event) {
+  const date = event.event_date || "event";
+  const slug = String(event.name || "event")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return downloadCsv(
+    `/events/${event.id}/export/`,
+    `indabax-kabale-${slug || "event"}-${date}.csv`
+  );
+}
+
 export function firstError(errorData) {
   if (!errorData) return "Something went wrong. Please try again.";
   if (typeof errorData === "string") return errorData;
-  if (errorData.detail) return errorData.detail;
+  if (errorData.detail) {
+    const detail = errorData.detail;
+    if (Array.isArray(detail)) return detail[0];
+    if (typeof detail === "string") return detail;
+  }
   const firstKey = Object.keys(errorData)[0];
   if (!firstKey) return "Please check the form and try again.";
   const value = errorData[firstKey];

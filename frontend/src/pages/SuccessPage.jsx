@@ -17,6 +17,11 @@ export default function SuccessPage() {
       <div className="text-center">
         <h1 className="page-title">You’re in.</h1>
         <p className="mt-1 text-sm text-ink-muted">{result.full_name}</p>
+        {result.event_name ? (
+          <p className="mt-1 text-sm font-semibold text-indaba-dark">
+            Registered for {result.event_name}
+          </p>
+        ) : null}
         <p className="mt-3 text-sm text-ink">
           Tap below to join the IndabaX WhatsApp group.
         </p>

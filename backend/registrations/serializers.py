@@ -2,7 +2,29 @@ import re
 
 from rest_framework import serializers
 
-from .models import Registrant
+from .models import Attendance, Event, Registrant
+
+
+class EventSerializer(serializers.ModelSerializer):
+    attendance_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Event
+        fields = [
+            "id",
+            "name",
+            "event_date",
+            "registration_open",
+            "attendance_count",
+            "created_at",
+        ]
+        read_only_fields = ["registration_open", "attendance_count", "created_at"]
+
+    def validate_name(self, value):
+        name = " ".join(value.split())
+        if len(name) < 2:
+            raise serializers.ValidationError("Please enter an event name.")
+        return name
 
 
 class RegistrantCreateSerializer(serializers.ModelSerializer):
@@ -25,6 +47,7 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ["registration_code"]
         extra_kwargs = {
             "student_number": {"validators": []},
+            "email": {"validators": []},
         }
 
     def validate_full_name(self, value):
@@ -37,11 +60,6 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
         number = value.strip().upper()
         if len(number) < 3:
             raise serializers.ValidationError("Please enter your student number.")
-        existing = Registrant.objects.filter(student_number__iexact=number).first()
-        if existing:
-            raise serializers.ValidationError(
-                f"You are already registered. Your code is {existing.registration_code}."
-            )
         return number
 
     def validate_phone(self, value):
@@ -65,6 +83,46 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def create(self, validated_data):
+        event = Event.open_event()
+        if event is None:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Registration is closed. Check back when the next session is open."
+                }
+            )
+
+        email = validated_data["email"]
+        student_number = validated_data["student_number"]
+        attendant = Registrant.objects.filter(email=email).first()
+        returning = attendant is not None
+
+        taken = Registrant.objects.filter(student_number__iexact=student_number)
+        if attendant:
+            taken = taken.exclude(pk=attendant.pk)
+        if taken.exists():
+            raise serializers.ValidationError(
+                {
+                    "student_number": "This student number is already used by another attendant."
+                }
+            )
+
+        if attendant is None:
+            attendant = Registrant.objects.create(**validated_data)
+        else:
+            if Attendance.objects.filter(attendant=attendant, event=event).exists():
+                raise serializers.ValidationError(
+                    {"detail": f"You are already registered for {event.name}."}
+                )
+            for field, value in validated_data.items():
+                setattr(attendant, field, value)
+            attendant.save()
+
+        Attendance.objects.create(attendant=attendant, event=event)
+        attendant._event = event
+        attendant._returning = returning
+        return attendant
+
 
 class RegistrantListSerializer(serializers.ModelSerializer):
     faculty_label = serializers.CharField(source="get_faculty_display", read_only=True)
@@ -72,6 +130,7 @@ class RegistrantListSerializer(serializers.ModelSerializer):
     experience_label = serializers.CharField(
         source="get_experience_level_display", read_only=True
     )
+    attended_at = serializers.DateTimeField(read_only=True, required=False)
 
     class Meta:
         model = Registrant
@@ -92,4 +151,5 @@ class RegistrantListSerializer(serializers.ModelSerializer):
             "heard_from",
             "registration_code",
             "created_at",
+            "attended_at",
         ]

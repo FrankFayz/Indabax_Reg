@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   downloadExport,
   fetchChoices,
+  fetchEvents,
   fetchRegistrants,
   fetchStats,
   isLoggedIn,
   setToken,
 } from "../lib/api";
 import { Page, inputClass, BackLink, ChoiceSelect } from "../components/ui";
+import { EventBoard, formatEventDate } from "../components/EventBoard";
+import { PieCard } from "../components/PieCard";
 
 const PAGE_SIZE = 25;
 
@@ -25,26 +28,38 @@ function formatWhen(iso) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedEventId = searchParams.get("event") || "";
   const [stats, setStats] = useState(null);
   const [rows, setRows] = useState([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [choices, setChoices] = useState(null);
+  const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
   const [faculty, setFaculty] = useState("");
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
   const loadId = useRef(0);
 
+  const selectedEvent = events.find(
+    (item) => String(item.id) === String(selectedEventId)
+  );
+
+  const loadEvents = useCallback(async () => {
+    const data = await fetchEvents();
+    setEvents(data.results || []);
+  }, []);
+
   const load = useCallback(
-    async (query, facultyFilter, nextPage) => {
+    async (query, facultyFilter, nextPage, eventId) => {
       const id = ++loadId.current;
       setError("");
       try {
         const [nextStats, list] = await Promise.all([
-          fetchStats(),
-          fetchRegistrants(query, facultyFilter, nextPage),
+          fetchStats(eventId),
+          fetchRegistrants(query, facultyFilter, nextPage, eventId),
         ]);
         if (id !== loadId.current) return;
         setStats(nextStats);
@@ -71,19 +86,28 @@ export default function DashboardPage() {
       return;
     }
     fetchChoices().then(setChoices).catch(() => {});
-  }, [navigate]);
+    loadEvents().catch(() => setError("Could not load events."));
+  }, [navigate, loadEvents]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!isLoggedIn()) return;
-      load(search, faculty, page);
+      load(search, faculty, page, selectedEventId);
     }, 250);
     return () => clearTimeout(timer);
-  }, [search, faculty, page, load]);
+  }, [search, faculty, page, selectedEventId, load]);
 
   function logout() {
     setToken("");
     navigate("/");
+  }
+
+  function selectEvent(nextId) {
+    const params = new URLSearchParams(searchParams);
+    if (nextId) params.set("event", nextId);
+    else params.delete("event");
+    setSearchParams(params);
+    setPage(1);
   }
 
   async function handleExport() {
@@ -96,11 +120,6 @@ export default function DashboardPage() {
       setExporting(false);
     }
   }
-
-  const maxFaculty = Math.max(
-    1,
-    ...(stats?.by_faculty || []).map((item) => item.count)
-  );
 
   return (
     <Page
@@ -119,7 +138,11 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="page-title">Attendance</h1>
-          <p className="mt-1 text-sm text-ink-muted">Who is registered.</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            {selectedEvent
+              ? `${selectedEvent.name} · ${formatEventDate(selectedEvent.event_date)}`
+              : "All attendants, one row per Kabale email."}
+          </p>
         </div>
         <button
           type="button"
@@ -135,48 +158,29 @@ export default function DashboardPage() {
         {error || "\u00a0"}
       </p>
 
-      <section className="mt-2 grid gap-3 sm:grid-cols-3">
-        <article className="rounded-2xl bg-indaba p-4 text-white shadow-[0_14px_28px_rgba(15,122,74,0.28)]">
-          <p className="text-sm font-semibold text-gold-soft">Registered</p>
-          <p className="font-display mt-1 min-h-12 text-4xl tabular-nums">
+      <EventBoard
+        events={events}
+        selectedId={selectedEventId}
+        onSelect={selectEvent}
+        onRefresh={loadEvents}
+        onError={setError}
+      />
+
+      <section className="mt-4">
+        <article className="flex items-end justify-between rounded-2xl bg-indaba px-4 py-4 text-white shadow-[0_14px_28px_rgba(15,122,74,0.28)]">
+          <p className="text-sm font-semibold text-gold-soft">
+            {selectedEvent ? "This event" : "Attendants"}
+          </p>
+          <p className="font-display min-h-10 text-4xl leading-none tabular-nums">
             {stats?.total ?? "—"}
           </p>
         </article>
-        <article className="min-h-40 rounded-2xl border border-cream-dark bg-surface p-4 sm:col-span-2">
-          <p className="text-sm font-bold text-ink">By faculty</p>
-          <div className="mt-3 space-y-2">
-            {(stats?.by_faculty || []).length === 0 ? (
-              <p className="text-sm text-ink-muted">None yet.</p>
-            ) : (
-              (stats?.by_faculty || []).map((item) => (
-                <div key={item.key}>
-                  <div className="flex justify-between gap-2 text-xs text-ink-muted">
-                    <span className="truncate">{item.label}</span>
-                    <span className="font-semibold tabular-nums">{item.count}</span>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-cream-dark">
-                    <div
-                      className="h-full rounded-full bg-gold"
-                      style={{ width: `${(item.count / maxFaculty) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </article>
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <PieCard title="Year of study" items={stats?.by_year} />
+          <PieCard title="Faculty" items={stats?.by_faculty} />
+          <PieCard title="Program" items={stats?.by_program} />
+        </div>
       </section>
-
-      <div className="mt-3 flex min-h-8 flex-wrap gap-2">
-        {(stats?.by_year || []).map((item) => (
-          <span
-            key={item.key}
-            className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-ink ring-1 ring-cream-dark"
-          >
-            {item.label}: {item.count}
-          </span>
-        ))}
-      </div>
 
       <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(12rem,22rem)]">
         <input
@@ -186,7 +190,7 @@ export default function DashboardPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          placeholder="Search name or number"
+          placeholder="Search name, email or number"
           aria-label="Search registrants"
         />
         <ChoiceSelect
@@ -215,12 +219,13 @@ export default function DashboardPage() {
             >
               <p className="font-bold text-indaba">{person.registration_code}</p>
               <p className="mt-1 font-semibold">{person.full_name}</p>
+              <p className="text-sm text-ink-muted">{person.email}</p>
               <p className="text-sm text-ink-muted">
                 {person.faculty_label} · {person.year_label}
               </p>
               <p className="text-sm">{person.program}</p>
               <p className="mt-1 text-sm text-ink-muted">
-                {person.phone} · {formatWhen(person.created_at)}
+                {person.phone} · {formatWhen(person.attended_at || person.created_at)}
               </p>
             </article>
           ))
@@ -255,6 +260,7 @@ export default function DashboardPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-semibold">{person.full_name}</div>
+                    <div className="text-xs text-ink-muted">{person.email}</div>
                     <div className="text-xs text-ink-muted">
                       {person.student_number}
                     </div>
@@ -264,7 +270,7 @@ export default function DashboardPage() {
                   <td className="px-4 py-3 whitespace-nowrap">{person.year_label}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{person.phone}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-ink-muted">
-                    {formatWhen(person.created_at)}
+                    {formatWhen(person.attended_at || person.created_at)}
                   </td>
                 </tr>
               ))

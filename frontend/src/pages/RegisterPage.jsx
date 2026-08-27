@@ -86,10 +86,30 @@ export default function RegisterPage() {
     >
       <h1 className="page-title">Register</h1>
       <p className="page-kicker mt-1.5">IndabaX Kabale University</p>
+      {choices?.open_event ? (
+        <p className="mt-1 text-sm font-semibold text-indaba-dark">
+          {choices.open_event.name}
+          {choices.open_event.event_date
+            ? ` · ${new Date(`${choices.open_event.event_date}T00:00:00`).toLocaleDateString("en-UG", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}`
+            : ""}
+        </p>
+      ) : null}
       <p className={`alert-slot mt-2 text-sm font-medium ${formError ? "text-terracotta" : "invisible"}`}>
         {formError || "\u00a0"}
       </p>
 
+      {choices && !choices.open_event ? (
+        <div className="form-card mt-3 rounded-xl p-6 text-center sm:rounded-2xl sm:p-8">
+          <p className="font-display text-2xl text-indaba-dark">Registration is closed</p>
+          <p className="mt-2 text-sm text-ink-muted">
+            The organizer has not opened a session yet. Check back for the next IndabaX event.
+          </p>
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="form-card mt-3 rounded-xl p-4 sm:rounded-2xl sm:p-6">
         <div className="flex flex-col">
           <Field id="full_name" label="Full name" error={errors.full_name}>
@@ -242,10 +262,11 @@ export default function RegisterPage() {
           {errors.code_of_conduct_agreed || "\u00a0"}
         </p>
 
-        <button type="submit" disabled={submitting} className={primaryBtn}>
+        <button type="submit" disabled={submitting || !choices?.open_event} className={primaryBtn}>
           {submitting ? "Saving…" : "Register"}
         </button>
       </form>
+      )}
     </Page>
   );
 }
