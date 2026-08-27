@@ -1,6 +1,8 @@
 import re
+from datetime import date, datetime
 
 from django.db import models, transaction
+from django.utils import timezone
 
 from .constants import (
     EXPERIENCE_CHOICES,
@@ -26,15 +28,40 @@ class Event(models.Model):
     def column_label(self):
         return f"{self.name} {self.event_date.strftime('%d-%b-%Y')}"
 
+    def event_day(self):
+        value = self.event_date
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        return date.fromisoformat(str(value))
+
+    def bucket(self):
+        if self.registration_open:
+            return "active"
+        if self.event_day() < timezone.localdate():
+            return "past"
+        return "upcoming"
+
     def filename_stem(self):
         slug = re.sub(r"[^a-z0-9]+", "-", self.name.lower()).strip("-") or "event"
         return f"indabax-kabale-{slug}-{self.event_date.isoformat()}"
 
     @classmethod
+    def close_expired(cls):
+        cls.objects.filter(
+            registration_open=True,
+            event_date__lt=timezone.localdate(),
+        ).update(registration_open=False)
+
+    @classmethod
     def open_event(cls):
+        cls.close_expired()
         return cls.objects.filter(registration_open=True).first()
 
     def open_registration(self):
+        if self.event_day() < timezone.localdate():
+            raise ValueError("past")
         with transaction.atomic():
             type(self).objects.select_for_update().filter(registration_open=True).update(
                 registration_open=False

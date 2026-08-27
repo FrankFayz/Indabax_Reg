@@ -174,6 +174,33 @@ class RegistrationApiTests(APITestCase):
         other.refresh_from_db()
         self.assertFalse(self.event.registration_open)
         self.assertTrue(other.registration_open)
+        self.assertEqual(opened.data["status"], "active")
+
+    def test_cannot_open_a_past_event(self):
+        self._auth()
+        past = Event.objects.create(name="Old workshop", event_date="2026-08-01")
+        opened = self.client.post(f"/api/events/{past.id}/open/")
+        self.assertEqual(opened.status_code, 400)
+        past.refresh_from_db()
+        self.assertFalse(past.registration_open)
+
+        listed = self.client.get("/api/events/")
+        statuses = {row["name"]: row["status"] for row in listed.data["results"]}
+        self.assertEqual(statuses["Old workshop"], "past")
+        self.assertEqual(statuses["Weekly session"], "active")
+
+    def test_expired_open_event_moves_to_past(self):
+        leftover = Event.objects.create(
+            name="Yesterday",
+            event_date="2026-08-01",
+            registration_open=True,
+        )
+        self.event.close_registration()
+        choices = self.client.get("/api/choices/")
+        self.assertIsNone(choices.data["open_event"])
+        leftover.refresh_from_db()
+        self.assertFalse(leftover.registration_open)
+        self.assertEqual(leftover.bucket(), "past")
 
     def test_create_event_and_delete_empty(self):
         self._auth()

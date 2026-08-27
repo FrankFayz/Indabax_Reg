@@ -214,6 +214,7 @@ class EventListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        Event.close_expired()
         events = Event.objects.annotate(attendance_count=Count("attendances"))
         return Response({"results": EventSerializer(events, many=True).data})
 
@@ -267,7 +268,15 @@ class EventOpenView(APIView):
             event = Event.objects.get(pk=pk)
         except Event.DoesNotExist as exc:
             raise Http404("Event not found.") from exc
-        event.open_registration()
+        try:
+            event.open_registration()
+        except ValueError:
+            return Response(
+                {
+                    "detail": "This event is in the past. Open an upcoming session instead."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         event.attendance_count = event.attendances.count()
         return Response(EventSerializer(event).data)
 

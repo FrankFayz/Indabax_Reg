@@ -7,6 +7,7 @@ from .models import Attendance, Event, Registrant
 
 class EventSerializer(serializers.ModelSerializer):
     attendance_count = serializers.IntegerField(read_only=True, default=0)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -16,9 +17,18 @@ class EventSerializer(serializers.ModelSerializer):
             "event_date",
             "registration_open",
             "attendance_count",
+            "status",
             "created_at",
         ]
-        read_only_fields = ["registration_open", "attendance_count", "created_at"]
+        read_only_fields = [
+            "registration_open",
+            "attendance_count",
+            "status",
+            "created_at",
+        ]
+
+    def get_status(self, obj):
+        return obj.bucket()
 
     def validate_name(self, value):
         name = " ".join(value.split())
