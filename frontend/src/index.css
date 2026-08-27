@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --color-indaba: #007a4d;
+  --color-indaba-dark: #005c3a;
+  --color-indaba-light: #00a35f;
+  --color-gold: #ffc400;
+  --color-gold-soft: #ffd54f;
+  --color-cream: #fff6e8;
+  --color-cream-dark: #ead9b8;
+  --color-ink: #0b0b0b;
+  --color-ink-muted: #3f3f3f;
+  --color-terracotta: #e5481d;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+}
+
+html {
+  overflow-x: clip;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+.site-header {
+  background: var(--color-cream);
+  border-bottom: 2px solid var(--color-gold);
+}
+
+.brand-mark {
+  display: block;
+  height: 2.75rem;
+  width: auto;
+  max-width: min(58vw, 220px);
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (min-width: 640px) {
+  .brand-mark {
+    height: 4.25rem;
+    max-width: 320px;
+  }
+}
+
+.form-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.field-control {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+select.field-control {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23005c3a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 12px 8px;
+  padding-right: 2.4rem;
+  text-overflow: ellipsis;
+}
