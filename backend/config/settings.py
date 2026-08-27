@@ -21,6 +21,8 @@ ALLOWED_HOSTS = [
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+if "indabax-reg.onrender.com" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("indabax-reg.onrender.com")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -137,6 +139,7 @@ CSRF_TRUSTED_ORIGINS = list(
             if RENDER_EXTERNAL_HOSTNAME
             else []
         )
+        + ["https://indabax-reg.onrender.com"]
     )
 )
 
