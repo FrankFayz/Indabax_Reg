@@ -91,7 +91,7 @@ export default function RegisterPage() {
       </p>
 
       {choices && !choices.open_event ? (
-        <div className="form-card mt-3 rounded-md">
+        <div className="form-card mt-3">
           <div className="form-banner">
             <p className="form-banner-kicker">Registration</p>
             <p className="form-banner-title">Closed for now</p>
@@ -103,7 +103,7 @@ export default function RegisterPage() {
           </div>
         </div>
       ) : (
-      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-md">
+      <form onSubmit={handleSubmit} className="form-card mt-3">
         <div className="form-banner">
           <p className="form-banner-kicker">Open session</p>
           <p className="form-banner-title">

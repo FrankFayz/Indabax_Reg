@@ -144,6 +144,7 @@ export default function DashboardPage() {
   return (
     <Page
       width="max-w-6xl"
+      joinPartners={false}
       right={
         <button type="button" onClick={logout} className={headerBtn}>
           Sign out

@@ -35,7 +35,7 @@ export default function LoginPage() {
         {error || "\u00a0"}
       </p>
 
-      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-md">
+      <form onSubmit={handleSubmit} className="form-card mt-3">
         <div className="form-banner">
           <p className="form-banner-kicker">Access</p>
           <p className="form-banner-title">Organizer account</p>

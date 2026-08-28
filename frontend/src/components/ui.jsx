@@ -19,7 +19,7 @@ export function BackLink({ to = "/", label = "Back" }) {
   );
 }
 
-export function Page({ children, right, width = "max-w-lg" }) {
+export function Page({ children, right, width = "max-w-lg", joinPartners = true }) {
   return (
     <div className="page-shell w-full">
       <header className="site-header min-w-0">
@@ -46,54 +46,47 @@ export function Page({ children, right, width = "max-w-lg" }) {
       </header>
 
       <main className="min-w-0 w-full">
-        <div className={`mx-auto w-full min-w-0 ${width} px-4 py-5 sm:px-6 sm:py-8`}>
+        <div
+          className={`mx-auto w-full min-w-0 ${width} px-4 py-5 sm:px-6 sm:py-8${
+            joinPartners ? " page-stack" : ""
+          }`}
+        >
           {children}
-        </div>
-      </main>
-
-      <footer className="site-footer min-w-0">
-        <div className="mx-auto grid w-full max-w-lg grid-cols-2 items-start gap-3 px-4 py-5 sm:max-w-3xl sm:gap-8 sm:px-6">
-          <a
-            href="https://www.kab.ac.ug/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex min-w-0 flex-col items-center no-underline"
-          >
-            <span className="partner-plate">
+          <div className="partners mx-auto mt-3 grid w-full max-w-lg grid-cols-2 items-end gap-6 border border-cream-dark bg-surface px-4 py-5 sm:px-6">
+            <a
+              href="https://www.kab.ac.ug/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex min-w-0 flex-col items-center no-underline"
+            >
               <span className="partner-slot">
                 <img
-                  src="/logos/kabale-university.jpg"
+                  src="/logos/kabale-university.png"
                   alt="Kabale University"
                   className="partner-mark"
-                  width={600}
-                  height={600}
+                  width={500}
+                  height={516}
                   decoding="async"
                 />
               </span>
-            </span>
-            <span className="mt-2 px-1 text-center text-[10px] leading-tight text-on-forest/70 sm:text-[11px]">
-              Knowledge is the future
-            </span>
-          </a>
-          <div className="flex min-w-0 flex-col items-center">
-            <span className="partner-plate">
+              <span className="partner-caption">Knowledge is the future</span>
+            </a>
+            <div className="flex min-w-0 flex-col items-center">
               <span className="partner-slot">
                 <img
                   src="/logos/cosaku.png"
                   alt="COSAKU"
                   className="partner-mark"
-                  width={702}
-                  height={711}
+                  width={642}
+                  height={672}
                   decoding="async"
                 />
               </span>
-            </span>
-            <span className="mt-2 px-1 text-center text-[10px] leading-tight text-on-forest/70 sm:text-[11px]">
-              Moving technology to another level
-            </span>
+              <span className="partner-caption">Moving technology to another level</span>
+            </div>
           </div>
         </div>
-      </footer>
+      </main>
     </div>
   );
 }
@@ -101,7 +94,7 @@ export function Page({ children, right, width = "max-w-lg" }) {
 export function Field({ id, label, error, children }) {
   return (
     <div className="flex min-w-0 w-full flex-col gap-1 text-left">
-      <label htmlFor={id} className="text-[13px] font-semibold text-ink">
+      <label htmlFor={id} className="text-[13px] font-semibold tracking-[0.02em] text-ink">
         {label}
       </label>
       {children}
@@ -116,7 +109,7 @@ export function Field({ id, label, error, children }) {
 }
 
 export const inputClass =
-  "field-control h-11 rounded-md border border-cream-dark bg-field px-3 text-base text-ink outline-none transition-colors placeholder:text-ink-muted/60 focus:border-gold focus:bg-surface";
+  "field-control h-11 rounded-md border border-cream-dark bg-field px-3 text-[15px] leading-normal text-ink outline-none transition-colors placeholder:text-ink-muted/60 focus:border-gold focus:bg-surface";
 
 export const primaryBtn =
   "inline-flex h-11 w-full items-center justify-center rounded-md bg-indaba text-base font-semibold text-white transition-colors hover:bg-indaba-dark disabled:opacity-60";
@@ -166,7 +159,7 @@ export function ChoiceSelect({
       <button
         type="button"
         id={id}
-        className="field-control flex min-h-11 w-full items-start justify-between gap-3 rounded-md border border-cream-dark bg-field py-2.5 pl-3 pr-3 text-left text-base outline-none transition-colors focus:border-gold focus:bg-surface"
+        className="field-control flex min-h-11 w-full items-start justify-between gap-3 rounded-md border border-cream-dark bg-field py-2.5 pl-3 pr-3 text-left text-[15px] outline-none transition-colors focus:border-gold focus:bg-surface"
         aria-label={ariaLabel}
         aria-required={required || undefined}
         aria-haspopup="listbox"

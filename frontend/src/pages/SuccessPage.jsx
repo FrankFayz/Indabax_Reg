@@ -14,7 +14,7 @@ export default function SuccessPage() {
   return (
     <Page>
       <BackLink to="/" label="Back to register" />
-      <div className="form-card rounded-md">
+      <div className="form-card">
         <div className="form-banner">
           <p className="form-banner-kicker">Confirmed</p>
           <p className="form-banner-title">You’re in.</p>

@@ -23,7 +23,7 @@ function conicGradient(items, total) {
     stops.push(`${color} ${start}% ${end}%`);
     start = end;
     if (gap) {
-      stops.push(`#efe4c8 ${start}% ${start + gap}%`);
+      stops.push(`#f3efe4 ${start}% ${start + gap}%`);
       start += gap;
     }
   });
@@ -46,7 +46,7 @@ export function PieCard({ title, items = [] }) {
             style={{ background: conicGradient(items, total) }}
             aria-hidden="true"
           >
-            <div className="absolute inset-[26%] flex items-center justify-center rounded-full bg-[#efe4c8]">
+            <div className="absolute inset-[26%] flex items-center justify-center rounded-full bg-surface">
               <p className="font-display text-lg leading-none text-ink tabular-nums">
                 {total}
               </p>
