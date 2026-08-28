@@ -51,40 +51,44 @@ export function Page({ children, right, width = "max-w-lg" }) {
         </div>
       </main>
 
-      <footer className="min-w-0 border-t border-cream-dark bg-white">
-        <div className="mx-auto grid w-full max-w-lg grid-cols-2 items-start gap-3 px-4 py-4 sm:max-w-3xl sm:gap-8 sm:px-6">
+      <footer className="site-footer min-w-0">
+        <div className="mx-auto grid w-full max-w-lg grid-cols-2 items-start gap-3 px-4 py-5 sm:max-w-3xl sm:gap-8 sm:px-6">
           <a
             href="https://www.kab.ac.ug/"
             target="_blank"
             rel="noreferrer"
             className="flex min-w-0 flex-col items-center no-underline"
           >
-            <span className="partner-slot">
-              <img
-                src="/logos/kabale-university.jpg"
-                alt="Kabale University"
-                className="partner-mark"
-                width={600}
-                height={600}
-                decoding="async"
-              />
+            <span className="partner-plate">
+              <span className="partner-slot">
+                <img
+                  src="/logos/kabale-university.jpg"
+                  alt="Kabale University"
+                  className="partner-mark"
+                  width={600}
+                  height={600}
+                  decoding="async"
+                />
+              </span>
             </span>
-            <span className="mt-1.5 px-1 text-center text-[10px] leading-tight text-ink-muted sm:text-[11px]">
+            <span className="mt-2 px-1 text-center text-[10px] leading-tight text-on-forest/70 sm:text-[11px]">
               Knowledge is the future
             </span>
           </a>
           <div className="flex min-w-0 flex-col items-center">
-            <span className="partner-slot">
-              <img
-                src="/logos/cosaku.png"
-                alt="COSAKU"
-                className="partner-mark"
-                width={702}
-                height={711}
-                decoding="async"
-              />
+            <span className="partner-plate">
+              <span className="partner-slot">
+                <img
+                  src="/logos/cosaku.png"
+                  alt="COSAKU"
+                  className="partner-mark"
+                  width={702}
+                  height={711}
+                  decoding="async"
+                />
+              </span>
             </span>
-            <span className="mt-1.5 px-1 text-center text-[10px] leading-tight text-ink-muted sm:text-[11px]">
+            <span className="mt-2 px-1 text-center text-[10px] leading-tight text-on-forest/70 sm:text-[11px]">
               Moving technology to another level
             </span>
           </div>
@@ -112,16 +116,16 @@ export function Field({ id, label, error, children }) {
 }
 
 export const inputClass =
-  "field-control h-11 rounded-md border border-cream-dark bg-white px-3 text-base text-ink outline-none transition-colors placeholder:text-stone-400 focus:border-indaba-dark";
+  "field-control h-11 rounded-md border border-cream-dark bg-field px-3 text-base text-ink outline-none transition-colors placeholder:text-ink-muted/60 focus:border-gold focus:bg-surface";
 
 export const primaryBtn =
   "inline-flex h-11 w-full items-center justify-center rounded-md bg-indaba text-base font-semibold text-white transition-colors hover:bg-indaba-dark disabled:opacity-60";
 
 export const secondaryBtn =
-  "inline-flex h-11 items-center justify-center rounded-md border border-cream-dark bg-white px-4 text-sm font-semibold text-ink transition-colors hover:bg-cream disabled:opacity-40";
+  "inline-flex h-11 items-center justify-center rounded-md border border-cream-dark bg-surface px-4 text-sm font-semibold text-ink transition-colors hover:bg-cream disabled:opacity-40";
 
 export const headerBtn =
-  "shrink-0 rounded-md border border-cream-dark bg-white px-3 py-1.5 text-[11px] font-semibold tracking-wide text-ink no-underline transition-colors hover:bg-cream sm:px-3.5";
+  "shrink-0 rounded-md border border-gold bg-transparent px-3 py-1.5 text-[11px] font-semibold tracking-wide text-on-forest no-underline transition-colors hover:bg-forest-mid sm:px-3.5";
 
 export function ChoiceSelect({
   id,
@@ -162,7 +166,7 @@ export function ChoiceSelect({
       <button
         type="button"
         id={id}
-        className="field-control flex min-h-11 w-full items-start justify-between gap-3 rounded-md border border-cream-dark bg-white py-2.5 pl-3 pr-3 text-left text-base outline-none transition-colors focus:border-indaba-dark"
+        className="field-control flex min-h-11 w-full items-start justify-between gap-3 rounded-md border border-cream-dark bg-field py-2.5 pl-3 pr-3 text-left text-base outline-none transition-colors focus:border-gold focus:bg-surface"
         aria-label={ariaLabel}
         aria-required={required || undefined}
         aria-haspopup="listbox"
@@ -172,7 +176,7 @@ export function ChoiceSelect({
       >
         <span
           className={`min-w-0 flex-1 whitespace-normal break-words leading-snug ${
-            selected ? "text-ink" : "text-stone-400"
+            selected ? "text-ink" : "text-ink-muted/70"
           }`}
         >
           {selected?.label || placeholder}
@@ -192,7 +196,7 @@ export function ChoiceSelect({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-x-hidden overflow-y-auto rounded-md border border-cream-dark bg-white py-1"
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-x-hidden overflow-y-auto rounded-md border border-cream-dark bg-surface py-1"
         >
           <li>
             <button

@@ -1,17 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-indaba: #0f7a4a;
-  --color-indaba-dark: #0a5634;
-  --color-indaba-light: #178a55;
-  --color-gold: #d4a017;
-  --color-gold-soft: #f4f2ed;
-  --color-cream: #f4f2ed;
-  --color-cream-dark: #d8d2c6;
-  --color-ink: #1a1916;
-  --color-ink-muted: #6b675f;
+  --color-indaba: #157a4a;
+  --color-indaba-dark: #0e5534;
+  --color-indaba-light: #1d8d58;
+  --color-gold: #d4a84b;
+  --color-gold-soft: #efe4c4;
+  --color-forest: #10241c;
+  --color-forest-mid: #1a3a2d;
+  --color-canvas: #b9cbbd;
+  --color-cream: #dce8de;
+  --color-cream-dark: #a7b9aa;
+  --color-ink: #13241c;
+  --color-ink-muted: #5b6c62;
   --color-terracotta: #c2410c;
-  --color-surface: #ffffff;
+  --color-surface: #efe4c8;
+  --color-field: #e2eee4;
+  --color-on-forest: #f4efe4;
   --font-sans: "DM Sans", "DM Sans Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", "Fraunces Fallback", ui-serif, Georgia, serif;
 }
@@ -39,7 +44,7 @@ html {
   width: 100%;
   max-width: 100%;
   height: 100%;
-  background-color: var(--color-cream);
+  background-color: var(--color-canvas);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: none;
@@ -79,7 +84,7 @@ body {
   overflow: visible;
   color: var(--color-ink);
   font-family: var(--font-sans);
-  background-color: var(--color-cream);
+  background-color: var(--color-canvas);
 }
 
 #root {
@@ -112,8 +117,8 @@ body {
   position: relative;
   z-index: 30;
   height: 4rem;
-  background: #fff;
-  border-bottom: 1px solid var(--color-cream-dark);
+  background: var(--color-forest);
+  border-bottom: 3px solid var(--color-gold);
 }
 
 @media (min-width: 640px) {
@@ -125,15 +130,20 @@ body {
 .brand-slot {
   display: flex;
   align-items: center;
-  overflow: hidden;
-  height: 2.75rem;
-  width: 5.5rem;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 2.9rem;
+  width: 6.75rem;
+  padding: 0.18rem 0.32rem;
+  background: var(--color-on-forest);
+  border-radius: 0.375rem;
 }
 
 @media (min-width: 640px) {
   .brand-slot {
-    height: 3.75rem;
-    width: 7.5rem;
+    height: 3.9rem;
+    width: 9rem;
+    padding: 0.22rem 0.4rem;
   }
 }
 
@@ -143,7 +153,7 @@ body {
   width: 100%;
   max-width: 100%;
   object-fit: contain;
-  object-position: left center;
+  object-position: center;
 }
 
 .form-card {
@@ -151,9 +161,58 @@ body {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  overflow: hidden;
   overflow-anchor: none;
   background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 35%, var(--color-cream-dark));
+}
+
+.form-banner {
+  background: var(--color-forest);
+  padding: 1rem 1.25rem 1.15rem;
+  border-bottom: 4px solid var(--color-gold);
+}
+
+.form-banner-kicker {
+  color: var(--color-gold);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.form-banner-title {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.25;
+  color: var(--color-on-forest);
+}
+
+.form-banner-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: color-mix(in srgb, var(--color-on-forest) 72%, transparent);
+}
+
+.optional-panel {
+  background: var(--color-cream);
   border: 1px solid var(--color-cream-dark);
+}
+
+.site-footer {
+  background: var(--color-forest-mid);
+  border-top: 1px solid color-mix(in srgb, var(--color-gold) 40%, var(--color-forest-mid));
+}
+
+.partner-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.15rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--color-surface);
+  border-radius: 0.375rem;
 }
 
 .field-control {
@@ -202,10 +261,10 @@ select.field-control {
 }
 
 .page-kicker {
-  color: var(--color-ink-muted);
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  color: var(--color-forest-mid);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 

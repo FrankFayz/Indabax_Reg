@@ -132,7 +132,7 @@ export function EventMenu({
   }
 
   return (
-    <section className="rounded-md border border-cream-dark bg-white">
+    <section className="rounded-md border border-cream-dark bg-surface">
       <nav className="flex flex-wrap border-b border-cream-dark" aria-label="Events">
         {tabs.map((tab) => {
           const current = view === tab.id;

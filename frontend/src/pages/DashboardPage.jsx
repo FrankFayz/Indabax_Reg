@@ -203,7 +203,7 @@ export default function DashboardPage() {
       ) : null}
 
       <section className="mt-5">
-        <article className="flex items-end justify-between rounded-md border border-cream-dark bg-white px-4 py-4">
+        <article className="flex items-end justify-between rounded-md border border-cream-dark bg-surface px-4 py-4">
           <p className="text-sm text-ink-muted">
             {selectedEvent ? "This event" : "Attendants"}
           </p>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
 
       <div className="mt-4 space-y-3 md:hidden">
         {rows.length === 0 ? (
-          <p className="rounded-md bg-white px-4 py-8 text-center text-ink-muted ring-1 ring-cream-dark">
+          <p className="rounded-md bg-surface px-4 py-8 text-center text-ink-muted ring-1 ring-cream-dark">
             No matches.
           </p>
         ) : (

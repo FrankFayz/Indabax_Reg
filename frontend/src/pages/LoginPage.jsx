@@ -28,13 +28,19 @@ export default function LoginPage() {
   return (
     <Page>
       <BackLink to="/" label="Back to register" />
-      <h1 className="page-title">Organizer</h1>
-      <p className="mt-1 text-sm text-ink-muted">Sign in to view attendance.</p>
+      <p className="page-kicker">Organizer desk</p>
+      <h1 className="page-title mt-1">Sign in</h1>
+      <p className="mt-1.5 text-sm text-ink-muted">View attendance for IndabaX sessions.</p>
       <p className={`alert-slot mt-2 text-sm font-medium ${error ? "text-terracotta" : "invisible"}`}>
         {error || "\u00a0"}
       </p>
 
-      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-md p-4 sm:p-6">
+      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-md">
+        <div className="form-banner">
+          <p className="form-banner-kicker">Access</p>
+          <p className="form-banner-title">Organizer account</p>
+        </div>
+        <div className="p-4 sm:p-6">
         <div>
           <Field id="username" label="Username">
             <input
@@ -61,6 +67,7 @@ export default function LoginPage() {
         <button type="submit" disabled={submitting} className={primaryBtn}>
           {submitting ? "Signing in…" : "Sign in"}
         </button>
+        </div>
       </form>
     </Page>
   );

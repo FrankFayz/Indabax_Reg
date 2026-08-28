@@ -23,7 +23,7 @@ function conicGradient(items, total) {
     stops.push(`${color} ${start}% ${end}%`);
     start = end;
     if (gap) {
-      stops.push(`#ffffff ${start}% ${start + gap}%`);
+      stops.push(`#efe4c8 ${start}% ${start + gap}%`);
       start += gap;
     }
   });
@@ -35,7 +35,7 @@ export function PieCard({ title, items = [] }) {
   const total = items.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <article className="rounded-md border border-cream-dark bg-white p-4">
+    <article className="rounded-md border border-cream-dark bg-surface p-4">
       <h2 className="text-sm font-semibold text-ink">{title}</h2>
       {total === 0 ? (
         <p className="mt-6 text-sm text-ink-muted">None yet.</p>
@@ -46,7 +46,7 @@ export function PieCard({ title, items = [] }) {
             style={{ background: conicGradient(items, total) }}
             aria-hidden="true"
           >
-            <div className="absolute inset-[26%] flex items-center justify-center rounded-full bg-white">
+            <div className="absolute inset-[26%] flex items-center justify-center rounded-full bg-[#efe4c8]">
               <p className="font-display text-lg leading-none text-ink tabular-nums">
                 {total}
               </p>

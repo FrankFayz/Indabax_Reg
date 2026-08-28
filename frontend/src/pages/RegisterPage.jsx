@@ -84,33 +84,44 @@ export default function RegisterPage() {
         </Link>
       }
     >
-      <h1 className="page-title">Register</h1>
-      <p className="page-kicker mt-1.5">IndabaX Kabale University</p>
-      {choices?.open_event ? (
-        <p className="mt-2 text-sm text-ink">
-          {choices.open_event.name}
-          {choices.open_event.event_date
-            ? ` · ${new Date(`${choices.open_event.event_date}T00:00:00`).toLocaleDateString("en-UG", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}`
-            : ""}
-        </p>
-      ) : null}
+      <p className="page-kicker">IndabaX Kabale University</p>
+      <h1 className="page-title mt-1">Session registration</h1>
       <p className={`alert-slot mt-2 text-sm font-medium ${formError ? "text-terracotta" : "invisible"}`}>
         {formError || "\u00a0"}
       </p>
 
       {choices && !choices.open_event ? (
-        <div className="form-card mt-3 rounded-md p-6 text-center sm:p-8">
-          <p className="font-display text-2xl text-ink">Registration is closed</p>
-          <p className="mt-2 text-sm text-ink-muted">
-            The organizer has not opened a session yet. Check back for the next IndabaX event.
-          </p>
+        <div className="form-card mt-3 rounded-md">
+          <div className="form-banner">
+            <p className="form-banner-kicker">Registration</p>
+            <p className="form-banner-title">Closed for now</p>
+          </div>
+          <div className="px-6 py-8 text-center sm:px-8">
+            <p className="text-sm text-ink-muted">
+              The organizer has not opened a session yet. Check back for the next IndabaX event.
+            </p>
+          </div>
         </div>
       ) : (
-      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-md p-4 sm:p-6">
+      <form onSubmit={handleSubmit} className="form-card mt-3 rounded-md">
+        <div className="form-banner">
+          <p className="form-banner-kicker">Open session</p>
+          <p className="form-banner-title">
+            {choices?.open_event?.name || "IndabaX session"}
+          </p>
+          {choices?.open_event?.event_date ? (
+            <p className="form-banner-meta">
+              {new Date(`${choices.open_event.event_date}T00:00:00`).toLocaleDateString("en-UG", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="p-4 sm:p-6">
         <div className="flex flex-col">
           <Field id="full_name" label="Full name" error={errors.full_name}>
             <input
@@ -203,8 +214,8 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="mt-1 border-t border-cream-dark pt-4">
-          <p className="mb-3 text-[11px] font-semibold tracking-[0.14em] text-ink-muted uppercase">
+        <div className="optional-panel mt-1 rounded-md px-4 pt-4 pb-1">
+          <p className="mb-3 text-[11px] font-semibold tracking-[0.14em] text-forest-mid uppercase">
             Optional
           </p>
           <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
@@ -262,9 +273,10 @@ export default function RegisterPage() {
           {errors.code_of_conduct_agreed || "\u00a0"}
         </p>
 
-        <button type="submit" disabled={submitting || !choices?.open_event} className={primaryBtn}>
+        <button type="submit" disabled={submitting || !choices?.open_event} className={`${primaryBtn} mt-2`}>
           {submitting ? "Saving…" : "Register"}
         </button>
+        </div>
       </form>
       )}
     </Page>

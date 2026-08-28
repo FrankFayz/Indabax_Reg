@@ -14,12 +14,16 @@ export default function SuccessPage() {
   return (
     <Page>
       <BackLink to="/" label="Back to register" />
-      <div className="form-card rounded-md px-6 py-10 text-center sm:px-10">
-        <h1 className="page-title">You’re in.</h1>
-        <p className="mt-2 text-sm text-ink-muted">{result.full_name}</p>
-        {result.event_name ? (
-          <p className="mt-1 text-sm text-ink">Registered for {result.event_name}</p>
-        ) : null}
+      <div className="form-card rounded-md">
+        <div className="form-banner">
+          <p className="form-banner-kicker">Confirmed</p>
+          <p className="form-banner-title">You’re in.</p>
+          {result.event_name ? (
+            <p className="form-banner-meta">{result.event_name}</p>
+          ) : null}
+        </div>
+        <div className="px-6 py-8 text-center sm:px-10">
+        <p className="text-sm font-semibold text-ink">{result.full_name}</p>
         <p className="mt-5 text-sm text-ink-muted">
           Join the IndabaX WhatsApp group to stay updated.
         </p>
@@ -46,6 +50,7 @@ export default function SuccessPage() {
         >
           Register another
         </Link>
+        </div>
       </div>
     </Page>
   );
