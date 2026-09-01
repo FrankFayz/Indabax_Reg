@@ -19,6 +19,7 @@ from .constants import (
     YEAR_CHOICES,
 )
 from .models import Attendance, Event, Registrant
+from .phones import display_phone, excel_phone
 from .serializers import (
     EventSerializer,
     RegistrantCreateSerializer,
@@ -115,7 +116,7 @@ def _profile_csv_row(person):
         person.get_faculty_display(),
         person.program,
         person.get_year_of_study_display(),
-        person.phone,
+        excel_phone(person.phone),
         person.get_gender_display() if person.gender else "",
         person.get_experience_level_display() if person.experience_level else "",
         person.get_heard_from_display() if person.heard_from else "",
@@ -188,6 +189,31 @@ class RegisterView(APIView):
                 "returning": bool(getattr(registrant, "_returning", False)),
             },
             status=status.HTTP_201_CREATED,
+        )
+
+
+class RegisterLookupView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        email = request.query_params.get("email", "").strip().lower()
+        if not email.endswith("@kab.ac.ug"):
+            return Response({"found": False})
+        person = Registrant.objects.filter(email=email).first()
+        if person is None:
+            return Response({"found": False})
+        return Response(
+            {
+                "found": True,
+                "full_name": person.full_name,
+                "faculty": person.faculty,
+                "program": person.program,
+                "year_of_study": person.year_of_study,
+                "phone": display_phone(person.phone),
+                "gender": person.gender,
+                "experience_level": person.experience_level or "",
+                "heard_from": person.heard_from or "",
+            }
         )
 
 

@@ -40,6 +40,86 @@ class RegistrationApiTests(APITestCase):
         self.assertEqual(Registrant.objects.count(), 1)
         self.assertEqual(Attendance.objects.count(), 1)
 
+    def test_lookup_returns_profile_for_existing_kabale_email(self):
+        self.client.post("/api/register/", self.payload, format="json")
+        response = self.client.get(
+            "/api/register/lookup/",
+            {"email": "AISHA@KAB.AC.UG"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["found"])
+        self.assertEqual(response.data["full_name"], "Aisha Ninsiima")
+        self.assertEqual(response.data["faculty"], "computing")
+        self.assertEqual(response.data["program"], "BSc Computer Science")
+        self.assertEqual(response.data["year_of_study"], "year_2")
+        self.assertEqual(response.data["phone"], "+256 772 123 456")
+        self.assertEqual(response.data["gender"], "female")
+        self.assertEqual(response.data["experience_level"], "beginner")
+        self.assertEqual(response.data["heard_from"], "friend")
+        self.assertNotIn("registration_code", response.data)
+        self.assertNotIn("email", response.data)
+
+    def test_lookup_is_exact_and_quiet_when_unknown(self):
+        self.client.post("/api/register/", self.payload, format="json")
+        missing = self.client.get(
+            "/api/register/lookup/",
+            {"email": "new.student@kab.ac.ug"},
+        )
+        self.assertEqual(missing.status_code, 200)
+        self.assertEqual(missing.data, {"found": False})
+
+        prefix = self.client.get(
+            "/api/register/lookup/",
+            {"email": "aisha"},
+        )
+        self.assertEqual(prefix.status_code, 200)
+        self.assertEqual(prefix.data, {"found": False})
+
+        other_domain = self.client.get(
+            "/api/register/lookup/",
+            {"email": "aisha@gmail.com"},
+        )
+        self.assertEqual(other_domain.status_code, 200)
+        self.assertEqual(other_domain.data, {"found": False})
+
+    def test_phone_accepts_local_and_country_code(self):
+        cases = [
+            ("0772123456", "+256772123456"),
+            ("+256 772 123 456", "+256772123456"),
+            ("256772123456", "+256772123456"),
+            ("772123456", "+256772123456"),
+            ("+254712345678", "+254712345678"),
+        ]
+        for index, (raw, stored) in enumerate(cases):
+            Event.objects.filter(registration_open=True).update(registration_open=False)
+            event = Event.objects.create(
+                name=f"Phone {index}",
+                event_date="2026-09-04",
+                registration_open=True,
+            )
+            response = self.client.post(
+                "/api/register/",
+                {
+                    **self.payload,
+                    "email": f"phone{index}@kab.ac.ug",
+                    "phone": raw,
+                },
+                format="json",
+            )
+            self.assertEqual(response.status_code, 201, raw)
+            person = Registrant.objects.get(email=f"phone{index}@kab.ac.ug")
+            self.assertEqual(person.phone, stored, raw)
+            if index < len(cases) - 1:
+                event.close_registration()
+
+        short = self.client.post(
+            "/api/register/",
+            {**self.payload, "email": "short@kab.ac.ug", "phone": "07712"},
+            format="json",
+        )
+        self.assertEqual(short.status_code, 400)
+        self.assertIn("phone", short.data)
+
     def test_register_without_code_of_conduct(self):
         payload = {**self.payload, "code_of_conduct_agreed": False}
         response = self.client.post("/api/register/", payload, format="json")
@@ -84,7 +164,7 @@ class RegistrationApiTests(APITestCase):
         self.assertEqual(Attendance.objects.count(), 2)
         person = Registrant.objects.get(email="aisha@kab.ac.ug")
         self.assertEqual(person.full_name, "Aisha N.")
-        self.assertEqual(person.phone, "0772000000")
+        self.assertEqual(person.phone, "+256772000000")
 
     def test_gender_is_required(self):
         payload = {**self.payload, "gender": ""}
@@ -123,6 +203,7 @@ class RegistrationApiTests(APITestCase):
         self.assertEqual(export.status_code, 200)
         body = export.content.decode()
         self.assertIn("aisha@kab.ac.ug", body)
+        self.assertIn("+256 772 123 456", body)
         self.assertIn("Weekly session 04-Sep-2026", body)
         self.assertIn("attended", body)
 

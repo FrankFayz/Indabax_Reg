@@ -1,8 +1,7 @@
-import re
-
 from rest_framework import serializers
 
 from .models import Attendance, Event, Registrant
+from .phones import display_phone, normalize_phone
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -66,10 +65,10 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
         return name
 
     def validate_phone(self, value):
-        digits = re.sub(r"\D", "", value)
-        if len(digits) < 9:
-            raise serializers.ValidationError("Please enter a valid phone number.")
-        return value.strip()
+        try:
+            return normalize_phone(value)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
 
     def validate_email(self, value):
         email = value.strip().lower()
@@ -128,7 +127,11 @@ class RegistrantListSerializer(serializers.ModelSerializer):
     experience_label = serializers.CharField(
         source="get_experience_level_display", read_only=True
     )
+    phone = serializers.SerializerMethodField()
     attended_at = serializers.DateTimeField(read_only=True, required=False)
+
+    def get_phone(self, obj):
+        return display_phone(obj.phone)
 
     class Meta:
         model = Registrant

@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-indaba: #0f6b42;
-  --color-indaba-dark: #0b4e31;
-  --color-indaba-light: #14814f;
-  --color-gold: #c49614;
-  --color-gold-soft: #ead9a3;
-  --color-forest: #10281e;
-  --color-forest-mid: #173528;
-  --color-canvas: #d4ddd5;
-  --color-cream: #e7ece8;
-  --color-cream-dark: #b3bfb5;
-  --color-ink: #10241c;
-  --color-ink-muted: #4a5a52;
+  --color-indaba: #004d38;
+  --color-indaba-dark: #003328;
+  --color-indaba-light: #0a6b4e;
+  --color-gold: #ffc400;
+  --color-gold-soft: #fff3c4;
+  --color-forest: #004d38;
+  --color-forest-mid: #003328;
+  --color-canvas: #f6f1e7;
+  --color-cream: #f6f1e7;
+  --color-cream-dark: #d4cbb8;
+  --color-ink: #003328;
+  --color-ink-muted: #5c6b63;
   --color-terracotta: #c2410c;
-  --color-surface: #f3efe4;
-  --color-field: #e8efe9;
-  --color-on-forest: #f3efe4;
+  --color-surface: #ffffff;
+  --color-field: #ffffff;
+  --color-on-forest: #f6f1e7;
   --font-sans: "Source Sans 3", "Source Sans 3 Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Source Serif 4", "Source Serif 4 Fallback", ui-serif, Georgia, serif;
 }
@@ -261,7 +261,7 @@ select.field-control {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%230b4e31' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23004D38' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.85rem center;
   background-size: 12px 8px;
@@ -287,6 +287,13 @@ select.field-control {
 
 .alert-slot {
   min-height: 1.25rem;
+}
+
+.returning-note {
+  min-height: 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-indaba);
 }
 
 .field-hint {

@@ -1,6 +1,6 @@
 const SLICE_COLORS = [
-  "#0F7A4A",
-  "#D4A017",
+  "#004D38",
+  "#FFC400",
   "#1D4E89",
   "#C2410C",
   "#0F766E",
@@ -23,7 +23,7 @@ function conicGradient(items, total) {
     stops.push(`${color} ${start}% ${end}%`);
     start = end;
     if (gap) {
-      stops.push(`#f3efe4 ${start}% ${start + gap}%`);
+      stops.push(`#ffffff ${start}% ${start + gap}%`);
       start += gap;
     }
   });

@@ -53,6 +53,11 @@ export function fetchChoices() {
   return request("/choices/");
 }
 
+export function lookupRegistrant(email) {
+  const query = new URLSearchParams({ email }).toString();
+  return request(`/register/lookup/?${query}`);
+}
+
 export function registerStudent(payload) {
   return request("/register/", { method: "POST", body: payload });
 }

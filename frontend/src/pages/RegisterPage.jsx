@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { fetchChoices, firstError, registerStudent } from "../lib/api";
+import { fetchChoices, firstError, lookupRegistrant, registerStudent } from "../lib/api";
 import { Field, Page, ChoiceSelect, primaryBtn, inputClass, headerBtn } from "../components/ui";
 
 const EMPTY = {
@@ -16,6 +16,17 @@ const EMPTY = {
   code_of_conduct_agreed: false,
 };
 
+const LOOKUP_WAIT_MS = 400;
+
+function isKabaleEmail(value) {
+  return value.trim().toLowerCase().endsWith("@kab.ac.ug");
+}
+
+function firstName(fullName) {
+  const part = (fullName || "").trim().split(/\s+/)[0];
+  return part || "there";
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [choices, setChoices] = useState(null);
@@ -23,6 +34,8 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [returningName, setReturningName] = useState("");
+  const lookupSeq = useRef(0);
 
   useEffect(() => {
     fetchChoices()
@@ -30,10 +43,60 @@ export default function RegisterPage() {
       .catch(() => setFormError("Could not load the form."));
   }, []);
 
+  useEffect(() => {
+    const seq = ++lookupSeq.current;
+    const email = form.email.trim().toLowerCase();
+    if (!isKabaleEmail(email)) {
+      setReturningName("");
+      return undefined;
+    }
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await lookupRegistrant(email);
+        if (seq !== lookupSeq.current) return;
+        if (!result.found) {
+          setReturningName("");
+          return;
+        }
+        setForm((current) => {
+          if (current.email.trim().toLowerCase() !== email) return current;
+          return {
+            ...current,
+            full_name: result.full_name || current.full_name,
+            faculty: result.faculty || "",
+            program: result.program || "",
+            year_of_study: result.year_of_study || "",
+            phone: result.phone || "",
+            gender: result.gender || "",
+            experience_level: result.experience_level || "",
+            heard_from: result.heard_from || "",
+          };
+        });
+        setReturningName(result.full_name || "");
+        setErrors((current) => ({
+          ...current,
+          full_name: undefined,
+          faculty: undefined,
+          program: undefined,
+          year_of_study: undefined,
+          phone: undefined,
+          gender: undefined,
+        }));
+      } catch {
+        if (seq !== lookupSeq.current) return;
+        setReturningName("");
+      }
+    }, LOOKUP_WAIT_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [form.email]);
+
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
     setFormError("");
+    if (field === "email") setReturningName("");
   }
 
   async function handleSubmit(event) {
@@ -126,6 +189,25 @@ export default function RegisterPage() {
 
         <div className="p-4 sm:p-6">
         <div className="flex flex-col">
+          <Field id="email" label="Kabale email" error={errors.email}>
+            <input
+              id="email"
+              className={inputClass}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => update("email", e.target.value)}
+              placeholder="name@kab.ac.ug"
+              required
+            />
+          </Field>
+          <p className={`returning-note ${returningName ? "" : "invisible"}`}>
+            {returningName
+              ? `Welcome back, ${firstName(returningName)}. We filled your details from last time — you can edit them.`
+              : "\u00a0"}
+          </p>
+
           <Field id="full_name" label="Full name" error={errors.full_name}>
             <input
               id="full_name"
@@ -139,25 +221,22 @@ export default function RegisterPage() {
           </Field>
 
           <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
-            <Field id="email" label="Kabale email" error={errors.email}>
-              <input
-                id="email"
-                className={inputClass}
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={(e) => update("email", e.target.value)}
-                placeholder="name@kab.ac.ug"
-                required
-              />
-            </Field>
             <Field id="year_of_study" label="Year" error={errors.year_of_study}>
               <ChoiceSelect
                 id="year_of_study"
                 value={form.year_of_study}
                 onChange={(value) => update("year_of_study", value)}
                 options={choices?.years || []}
+                placeholder="Select"
+                required
+              />
+            </Field>
+            <Field id="gender" label="Sex" error={errors.gender}>
+              <ChoiceSelect
+                id="gender"
+                value={form.gender}
+                onChange={(value) => update("gender", value)}
+                options={choices?.genders || []}
                 placeholder="Select"
                 required
               />
@@ -186,31 +265,19 @@ export default function RegisterPage() {
             />
           </Field>
 
-          <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
-            <Field id="phone" label="Phone" error={errors.phone}>
-              <input
-                id="phone"
-                className={inputClass}
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={form.phone}
-                onChange={(e) => update("phone", e.target.value)}
-                placeholder="07xx xxx xxx"
-                required
-              />
-            </Field>
-            <Field id="gender" label="Sex" error={errors.gender}>
-              <ChoiceSelect
-                id="gender"
-                value={form.gender}
-                onChange={(value) => update("gender", value)}
-                options={choices?.genders || []}
-                placeholder="Select"
-                required
-              />
-            </Field>
-          </div>
+          <Field id="phone" label="Phone" error={errors.phone}>
+            <input
+              id="phone"
+              className={inputClass}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={form.phone}
+              onChange={(e) => update("phone", e.target.value)}
+              placeholder="07xx xxx xxx or +256…"
+              required
+            />
+          </Field>
         </div>
 
         <div className="optional-panel mt-1 rounded-md px-4 pt-4 pb-1">
