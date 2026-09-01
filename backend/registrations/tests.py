@@ -13,7 +13,6 @@ class RegistrationApiTests(APITestCase):
             "faculty": "computing",
             "program": "BSc Computer Science",
             "year_of_study": "year_2",
-            "student_number": "2023/A/1234",
             "phone": "0772123456",
             "email": "aisha@kab.ac.ug",
             "gender": "female",
@@ -40,6 +39,13 @@ class RegistrationApiTests(APITestCase):
         self.assertEqual(response.data["event_name"], "Weekly session")
         self.assertEqual(Registrant.objects.count(), 1)
         self.assertEqual(Attendance.objects.count(), 1)
+
+    def test_register_without_code_of_conduct(self):
+        payload = {**self.payload, "code_of_conduct_agreed": False}
+        response = self.client.post("/api/register/", payload, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("code_of_conduct_agreed", response.data)
+        self.assertEqual(Registrant.objects.count(), 0)
 
     def test_closed_registration_is_rejected(self):
         self.event.close_registration()
@@ -80,31 +86,11 @@ class RegistrationApiTests(APITestCase):
         self.assertEqual(person.full_name, "Aisha N.")
         self.assertEqual(person.phone, "0772000000")
 
-    def test_same_student_number_can_register_for_next_event(self):
-        self.client.post("/api/register/", self.payload, format="json")
-        self.event.close_registration()
-        next_event = Event.objects.create(name="Workshop", event_date="2026-09-11")
-        next_event.open_registration()
-        again = self.client.post("/api/register/", self.payload, format="json")
-        self.assertEqual(again.status_code, 201)
-        self.assertEqual(Registrant.objects.count(), 1)
-        self.assertEqual(Attendance.objects.count(), 2)
-        self.assertTrue(
-            Attendance.objects.filter(
-                attendant__student_number="2023/A/1234", event=next_event
-            ).exists()
-        )
-
-    def test_student_number_cannot_belong_to_two_emails(self):
-        self.client.post("/api/register/", self.payload, format="json")
-        other = {
-            **self.payload,
-            "full_name": "John Doe",
-            "email": "john@kab.ac.ug",
-        }
-        response = self.client.post("/api/register/", other, format="json")
+    def test_gender_is_required(self):
+        payload = {**self.payload, "gender": ""}
+        response = self.client.post("/api/register/", payload, format="json")
         self.assertEqual(response.status_code, 400)
-        self.assertIn("already registered", str(response.data).lower())
+        self.assertIn("gender", response.data)
 
     def test_choices_include_open_event(self):
         response = self.client.get("/api/choices/")
@@ -130,6 +116,8 @@ class RegistrationApiTests(APITestCase):
         self.assertEqual(stats.data["by_program"][0]["label"], "BSc Computer Science")
         self.assertEqual(stats.data["by_year"][0]["key"], "year_2")
         self.assertEqual(stats.data["by_faculty"][0]["key"], "computing")
+        self.assertEqual(stats.data["by_gender"][0]["key"], "female")
+        self.assertEqual(stats.data["by_gender"][0]["count"], 1)
 
         export = self.client.get("/api/registrants/export/")
         self.assertEqual(export.status_code, 200)
@@ -148,8 +136,8 @@ class RegistrationApiTests(APITestCase):
             {
                 **self.payload,
                 "full_name": "John Doe",
-                "student_number": "2023/A/5555",
                 "email": "john@kab.ac.ug",
+                "gender": "male",
             },
             format="json",
         )
@@ -178,6 +166,14 @@ class RegistrationApiTests(APITestCase):
             f"/api/registrants/stats/?event={workshop.id}"
         )
         self.assertEqual(event_stats.data["total"], 1)
+        self.assertEqual(event_stats.data["by_gender"][0]["key"], "male")
+        self.assertEqual(event_stats.data["by_gender"][0]["count"], 1)
+
+        week_stats = self.client.get(
+            f"/api/registrants/stats/?event={self.event.id}"
+        )
+        self.assertEqual(week_stats.data["total"], 1)
+        self.assertEqual(week_stats.data["by_gender"][0]["key"], "female")
 
     def test_opening_an_event_closes_the_other(self):
         self._auth()
@@ -237,8 +233,8 @@ class RegistrationApiTests(APITestCase):
             {
                 **self.payload,
                 "full_name": "John Doe",
-                "student_number": "2023/A/5555",
                 "email": "john@kab.ac.ug",
+                "gender": "male",
             },
             format="json",
         )
@@ -258,7 +254,6 @@ class RegistrationApiTests(APITestCase):
             {
                 **self.payload,
                 "full_name": "Mary Okello",
-                "student_number": "2023/A/7777",
                 "email": "mary@kab.ac.ug",
             },
             format="json",
@@ -273,7 +268,6 @@ class RegistrationApiTests(APITestCase):
                 {
                     **self.payload,
                     "full_name": f"Student {index}",
-                    "student_number": f"2023/A/{index:04d}",
                     "email": f"student{index}@kab.ac.ug",
                 },
                 format="json",
@@ -292,7 +286,6 @@ class RegistrationApiTests(APITestCase):
         payload = {
             **self.payload,
             "email": "aisha@gmail.com",
-            "student_number": "2023/A/9999",
         }
         response = self.client.post("/api/register/", payload, format="json")
         self.assertEqual(response.status_code, 400)

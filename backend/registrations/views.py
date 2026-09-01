@@ -31,13 +31,12 @@ PROGRAM_SLICE_LIMIT = 7
 PROFILE_CSV_HEADERS = [
     "Full name",
     "Email",
-    "Student number",
     "Registration code",
     "Faculty",
     "Program",
     "Year of study",
     "Phone",
-    "Gender",
+    "Sex",
     "ML/AI experience",
     "Heard from",
 ]
@@ -87,7 +86,6 @@ def _scoped_registrants(request):
     if query:
         registrants = registrants.filter(
             Q(full_name__icontains=query)
-            | Q(student_number__icontains=query)
             | Q(registration_code__icontains=query)
             | Q(program__icontains=query)
             | Q(email__icontains=query)
@@ -113,7 +111,6 @@ def _profile_csv_row(person):
     return [
         person.full_name,
         person.email,
-        person.student_number,
         person.registration_code,
         person.get_faculty_display(),
         person.program,
@@ -344,6 +341,7 @@ class StatsView(APIView):
             _count_rows(registrants, "program"),
             PROGRAM_SLICE_LIMIT,
         )
+        by_gender = _count_rows(registrants, "gender", dict(GENDER_CHOICES))
         by_experience = _count_rows(
             registrants, "experience_level", dict(EXPERIENCE_CHOICES)
         )
@@ -353,6 +351,7 @@ class StatsView(APIView):
                 "by_faculty": by_faculty,
                 "by_year": by_year,
                 "by_program": by_program,
+                "by_gender": by_gender,
                 "by_experience": by_experience,
             }
         )

@@ -90,7 +90,9 @@ class Registrant(models.Model):
     faculty = models.CharField(max_length=40, choices=FACULTY_CHOICES)
     program = models.CharField(max_length=150)
     year_of_study = models.CharField(max_length=20, choices=YEAR_CHOICES)
-    student_number = models.CharField(max_length=40, unique=True)
+    student_number = models.CharField(
+        max_length=40, unique=True, blank=True, null=True
+    )
     phone = models.CharField(max_length=20)
     email = models.EmailField(unique=True)
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True)
@@ -109,7 +111,8 @@ class Registrant(models.Model):
         return f"{self.registration_code} — {self.full_name}"
 
     def save(self, *args, **kwargs):
-        self.student_number = self.student_number.strip().upper()
+        number = (self.student_number or "").strip().upper()
+        self.student_number = number or None
         self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
         if not self.registration_code:

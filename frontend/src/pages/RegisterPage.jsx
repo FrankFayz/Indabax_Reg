@@ -5,7 +5,6 @@ import { Field, Page, ChoiceSelect, primaryBtn, inputClass, headerBtn } from "..
 
 const EMPTY = {
   full_name: "",
-  student_number: "",
   faculty: "",
   program: "",
   year_of_study: "",
@@ -46,6 +45,10 @@ export default function RegisterPage() {
       const nextErrors = {};
       if (!form.year_of_study) nextErrors.year_of_study = "Select your year.";
       if (!form.faculty) nextErrors.faculty = "Choose your faculty.";
+      if (!form.gender) nextErrors.gender = "Select your sex.";
+      if (!form.code_of_conduct_agreed) {
+        nextErrors.code_of_conduct_agreed = "Please agree to the IndabaX code of conduct.";
+      }
       const email = form.email.trim().toLowerCase();
       if (!email.endsWith("@kab.ac.ug")) {
         nextErrors.email = "Use your Kabale University email (@kab.ac.ug).";
@@ -136,17 +139,16 @@ export default function RegisterPage() {
           </Field>
 
           <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
-            <Field
-              id="student_number"
-              label="Student number"
-              error={errors.student_number}
-            >
+            <Field id="email" label="Kabale email" error={errors.email}>
               <input
-                id="student_number"
+                id="email"
                 className={inputClass}
-                value={form.student_number}
-                onChange={(e) => update("student_number", e.target.value)}
-                placeholder="2023/A/1234"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={form.email}
+                onChange={(e) => update("email", e.target.value)}
+                placeholder="name@kab.ac.ug"
                 required
               />
             </Field>
@@ -198,16 +200,13 @@ export default function RegisterPage() {
                 required
               />
             </Field>
-            <Field id="email" label="University email" error={errors.email}>
-              <input
-                id="email"
-                className={inputClass}
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={(e) => update("email", e.target.value)}
-                placeholder="name@kab.ac.ug"
+            <Field id="gender" label="Sex" error={errors.gender}>
+              <ChoiceSelect
+                id="gender"
+                value={form.gender}
+                onChange={(value) => update("gender", value)}
+                options={choices?.genders || []}
+                placeholder="Select"
                 required
               />
             </Field>
@@ -219,15 +218,6 @@ export default function RegisterPage() {
             Optional
           </p>
           <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
-            <Field id="gender" label="Gender" error={errors.gender}>
-              <ChoiceSelect
-                id="gender"
-                value={form.gender}
-                onChange={(value) => update("gender", value)}
-                options={choices?.genders || []}
-                placeholder="Skip"
-              />
-            </Field>
             <Field
               id="experience_level"
               label="ML / AI level"
@@ -241,20 +231,20 @@ export default function RegisterPage() {
                 placeholder="Skip"
               />
             </Field>
-          </div>
-          <Field
-            id="heard_from"
-            label="How did you hear?"
-            error={errors.heard_from}
-          >
-            <ChoiceSelect
+            <Field
               id="heard_from"
-              value={form.heard_from}
-              onChange={(value) => update("heard_from", value)}
-              options={choices?.heard_from || []}
-              placeholder="Skip"
-            />
-          </Field>
+              label="How did you hear?"
+              error={errors.heard_from}
+            >
+              <ChoiceSelect
+                id="heard_from"
+                value={form.heard_from}
+                onChange={(value) => update("heard_from", value)}
+                options={choices?.heard_from || []}
+                placeholder="Skip"
+              />
+            </Field>
+          </div>
         </div>
 
         <label className="mt-1 flex min-h-11 items-start gap-3 text-sm text-ink">

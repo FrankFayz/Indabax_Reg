@@ -212,7 +212,8 @@ export default function DashboardPage() {
             {stats?.total ?? "—"}
           </p>
         </article>
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <PieCard title="Sex" items={stats?.by_gender} />
           <PieCard title="Year of study" items={stats?.by_year} />
           <PieCard title="Faculty" items={stats?.by_faculty} />
           <PieCard title="Program" items={stats?.by_program} />
@@ -227,7 +228,7 @@ export default function DashboardPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          placeholder="Search name, email or number"
+          placeholder="Search name or email"
           aria-label="Search registrants"
         />
         <ChoiceSelect
@@ -259,6 +260,7 @@ export default function DashboardPage() {
               <p className="text-sm text-ink-muted">{person.email}</p>
               <p className="text-sm text-ink-muted">
                 {person.faculty_label} · {person.year_label}
+                {person.gender_label ? ` · ${person.gender_label}` : ""}
               </p>
               <p className="text-sm">{person.program}</p>
               <p className="mt-1 text-sm text-ink-muted">
@@ -275,6 +277,7 @@ export default function DashboardPage() {
             <tr>
               <th className="px-4 py-3 font-bold">Code</th>
               <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Sex</th>
               <th className="px-4 py-3 font-bold">Faculty</th>
               <th className="px-4 py-3 font-bold">Program</th>
               <th className="px-4 py-3 font-bold">Year</th>
@@ -285,7 +288,7 @@ export default function DashboardPage() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-ink-muted">
+                <td colSpan={8} className="px-4 py-10 text-center text-ink-muted">
                   No matches.
                 </td>
               </tr>
@@ -298,9 +301,9 @@ export default function DashboardPage() {
                   <td className="px-4 py-3">
                     <div className="font-semibold">{person.full_name}</div>
                     <div className="text-xs text-ink-muted">{person.email}</div>
-                    <div className="text-xs text-ink-muted">
-                      {person.student_number}
-                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-ink-muted">
+                    {person.gender_label || "—"}
                   </td>
                   <td className="px-4 py-3 text-ink-muted">{person.faculty_label}</td>
                   <td className="px-4 py-3">{person.program}</td>

@@ -45,7 +45,6 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
             "faculty",
             "program",
             "year_of_study",
-            "student_number",
             "phone",
             "email",
             "gender",
@@ -56,8 +55,8 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["registration_code"]
         extra_kwargs = {
-            "student_number": {"validators": []},
             "email": {"validators": []},
+            "gender": {"allow_blank": False, "required": True},
         }
 
     def validate_full_name(self, value):
@@ -65,12 +64,6 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
         if len(name) < 3:
             raise serializers.ValidationError("Please enter your full name.")
         return name
-
-    def validate_student_number(self, value):
-        number = value.strip().upper()
-        if len(number) < 3:
-            raise serializers.ValidationError("Please enter your student number.")
-        return number
 
     def validate_phone(self, value):
         digits = re.sub(r"\D", "", value)
@@ -85,6 +78,11 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
                 "Use your Kabale University email (@kab.ac.ug)."
             )
         return email
+
+    def validate_gender(self, value):
+        if not value:
+            raise serializers.ValidationError("Please select your sex.")
+        return value
 
     def validate_code_of_conduct_agreed(self, value):
         if not value:
@@ -103,20 +101,7 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
             )
 
         email = validated_data["email"]
-        student_number = validated_data["student_number"]
-        by_email = Registrant.objects.filter(email=email).first()
-        by_number = Registrant.objects.filter(
-            student_number__iexact=student_number
-        ).first()
-
-        if by_email and by_number and by_email.pk != by_number.pk:
-            raise serializers.ValidationError(
-                {
-                    "student_number": "This student number is already used by another attendant."
-                }
-            )
-
-        attendant = by_email or by_number
+        attendant = Registrant.objects.filter(email=email).first()
         returning = attendant is not None
 
         if attendant is None:
@@ -125,15 +110,6 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
             if Attendance.objects.filter(attendant=attendant, event=event).exists():
                 raise serializers.ValidationError(
                     {"detail": f"You are already registered for {event.name}."}
-                )
-            if (
-                validated_data["email"] != attendant.email
-                and Registrant.objects.filter(email=validated_data["email"])
-                .exclude(pk=attendant.pk)
-                .exists()
-            ):
-                raise serializers.ValidationError(
-                    {"email": "This email is already used by another attendant."}
                 )
             for field, value in validated_data.items():
                 setattr(attendant, field, value)
@@ -148,6 +124,7 @@ class RegistrantCreateSerializer(serializers.ModelSerializer):
 class RegistrantListSerializer(serializers.ModelSerializer):
     faculty_label = serializers.CharField(source="get_faculty_display", read_only=True)
     year_label = serializers.CharField(source="get_year_of_study_display", read_only=True)
+    gender_label = serializers.CharField(source="get_gender_display", read_only=True)
     experience_label = serializers.CharField(
         source="get_experience_level_display", read_only=True
     )
@@ -163,10 +140,10 @@ class RegistrantListSerializer(serializers.ModelSerializer):
             "program",
             "year_of_study",
             "year_label",
-            "student_number",
             "phone",
             "email",
             "gender",
+            "gender_label",
             "experience_level",
             "experience_label",
             "heard_from",

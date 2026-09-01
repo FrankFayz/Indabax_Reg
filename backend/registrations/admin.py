@@ -16,14 +16,13 @@ class RegistrantAdmin(admin.ModelAdmin):
         "registration_code",
         "full_name",
         "email",
-        "student_number",
         "faculty",
         "program",
         "year_of_study",
         "created_at",
     )
-    search_fields = ("full_name", "email", "student_number", "registration_code", "program")
-    list_filter = ("faculty", "year_of_study", "experience_level")
+    search_fields = ("full_name", "email", "registration_code", "program")
+    list_filter = ("faculty", "year_of_study", "gender", "experience_level")
     readonly_fields = ("registration_code", "created_at")
 
 
